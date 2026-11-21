@@ -79,20 +79,38 @@ try:
 except ImportError:
     pass
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME') or 'mediscribe_db',
-        'USER': os.getenv('DB_USER') or 'root',
-        'PASSWORD': os.getenv('DB_PASSWORD') or 'root',
-        'HOST': os.getenv('DB_HOST') or '127.0.0.1',
-        'PORT': os.getenv('DB_PORT') or '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+
+# Use Neon PostgreSQL when DATABASE_URL is provided.
+# Otherwise, use the existing local MySQL database.
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    import dj_database_url
+
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("DB_NAME") or "mediscribe_db",
+            "USER": os.getenv("DB_USER") or "root",
+            "PASSWORD": os.getenv("DB_PASSWORD") or "root",
+            "HOST": os.getenv("DB_HOST") or "127.0.0.1",
+            "PORT": os.getenv("DB_PORT") or "3306",
+            "OPTIONS": {
+                "charset": "utf8mb4",
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
         }
     }
-}
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
