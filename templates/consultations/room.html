@@ -1,0 +1,659 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Consultation Room #{{ consultation.id }} — MediScribe{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #F4FAFA !important;
+        color: #07152D;
+    }
+    .room-container {
+        min-height: calc(100vh - 65px);
+    }
+    .room-card {
+        background-color: #FFFFFF;
+        border: 1px solid #67DDE0;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(7, 138, 131, 0.05);
+    }
+    .text-teal-highlight {
+        color: #078A83 !important;
+    }
+    .bg-teal-highlight {
+        background-color: #078A83 !important;
+    }
+    .action-btn-teal {
+        background-color: #078A83;
+        color: #FFFFFF !important;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .action-btn-teal:hover {
+        background-color: #06726c;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(7, 138, 131, 0.25);
+    }
+    .waveform-bar {
+        width: 4px;
+        height: 8px;
+        background-color: #078A83;
+        border-radius: 3px;
+        transition: height 0.05s ease-out;
+    }
+    .chat-container {
+        height: 440px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        background-color: #F8FCFC;
+        border: 1px solid #67DDE0;
+        border-radius: 14px;
+        scroll-behavior: smooth;
+    }
+    .msg-bubble {
+        max-width: 82%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 13.5px;
+        line-height: 1.5;
+        position: relative;
+        animation: fadeInMsg 0.25s ease forwards;
+    }
+    @keyframes fadeInMsg {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .msg-bubble.doctor {
+        background-color: #FFFFFF;
+        border: 1px solid #67DDE0;
+        color: #07152D;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+    }
+    .msg-bubble.patient {
+        background-color: #078A83;
+        color: #FFFFFF;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+    }
+    .msg-meta {
+        font-size: 10px;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .doctor .msg-meta {
+        color: #078A83;
+        opacity: 0.85;
+    }
+    .patient .msg-meta {
+        color: #E6F4F2;
+        justify-content: flex-end;
+    }
+    .status-pulse {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #10b981;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulseGreen 1.6s infinite;
+    }
+    @keyframes pulseGreen {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Topbar Header -->
+<div class="bg-white border-bottom py-2.5 px-4 d-flex justify-content-between align-items-center shadow-sm" style="height: 65px; position: sticky; top: 0; z-index: 1000; border-color: #67DDE0 !important;">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{% url 'patient_dashboard' %}" class="btn btn-sm" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83; font-weight: 600;">
+            <i class="fa-solid fa-arrow-left me-1"></i> Patient Portal
+        </a>
+        <div class="ps-3 d-flex flex-column" style="line-height: 1.1; border-left: 1px solid #67DDE0;">
+            <span class="fw-bold fs-6" style="color: #07152D;">Consultation Room #{{ consultation.id }}</span>
+            <span style="font-size: 10px; color: #078A83; font-weight: 600;">Department: {{ consultation.department }} • {{ consultation.visit_type }}</span>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 bg-light px-3 py-1.5 rounded-pill border" style="border-color: #67DDE0 !important;">
+            <div class="status-pulse"></div>
+            <span class="fw-bold small" style="color: #078A83;" id="room-sync-status">Live Connected</span>
+            <span class="badge rounded-pill bg-white text-dark border px-2 py-0.5 ms-1" style="font-size: 10px;" id="room-timer">00:00</span>
+        </div>
+        <div class="d-flex align-items-center gap-2 ps-3" style="border-left: 1px solid #67DDE0;">
+            <div class="d-flex flex-column text-end" style="line-height: 1.1;">
+                <span class="fw-bold small" style="color: #07152D;">{{ patient.name }}</span>
+                <span style="font-size: 9px; color: #078A83;">Patient (You)</span>
+            </div>
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-teal-highlight fw-bold" style="width: 36px; height: 36px; background-color: #E6F4F2; border: 1px solid #67DDE0;">
+                <i class="fa-solid fa-user"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- LEFT COLUMN: Attending Doctor & Visit Details -->
+        <div class="col-lg-4 d-flex flex-column gap-3">
+            <!-- Doctor Card -->
+            <div class="room-card p-4">
+                <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom" style="border-color: #67DDE0 !important;">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 52px; height: 52px; background: linear-gradient(135deg, #078A83, #0da59d);">
+                        <i class="fa-solid fa-user-doctor fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">Dr. {{ consultation.doctor.get_full_name|default:consultation.doctor.username }}</h6>
+                        <span class="text-teal-highlight small fw-semibold d-block">{{ doctor_profile.specialization|default:consultation.specialty }}</span>
+                        <span class="text-muted" style="font-size: 11px;"><i class="fa-solid fa-hospital text-teal-highlight me-1"></i> {{ doctor_profile.hospital|default:"MediScribe Hospital" }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2.5 small">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Specialty:</span>
+                        <span class="fw-bold text-dark">{{ consultation.department }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Consultation Mode:</span>
+                        <span class="badge bg-light text-teal-highlight border px-2 py-0.5">{{ consultation.visit_type }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Language:</span>
+                        <span class="fw-bold text-dark">{{ consultation.language }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Session Status:</span>
+                        <span id="consultation-status-pill" class="badge {% if consultation.status == 'COMPLETED' %}bg-success text-white{% else %}bg-teal-highlight text-white{% endif %}">
+                            {{ consultation.get_status_display|default:consultation.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Real-Time Clinical Notes / Prescriptions (When Generated) -->
+            <div class="room-card p-4" id="patient-documents-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-file-medical text-teal-highlight me-1.5"></i> Visit Documentation</h6>
+                    <span class="badge bg-light text-teal-highlight border" id="docs-count-badge">Live</span>
+                </div>
+
+                <div id="docs-content-area">
+                    {% if documents.exists %}
+                        <div class="d-flex flex-column gap-2">
+                            {% for doc in documents %}
+                                <div class="p-3 bg-light rounded-3 border" style="border-color: #67DDE0 !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold small text-dark">{{ doc.get_document_type_display }}</span>
+                                        <a href="{% url 'export_document' doc.id 'pdf' %}" target="_blank" class="btn btn-sm action-btn-teal rounded-pill px-2.5 py-0.5" style="font-size: 11px;">
+                                            <i class="fa-solid fa-download me-1"></i> PDF
+                                        </a>
+                                    </div>
+                                    <div class="small text-muted" style="font-size: 11.5px; max-height: 80px; overflow-y: auto; white-space: pre-wrap;">{{ doc.content|truncatechars:150 }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3 text-muted">
+                            <i class="fa-solid fa-wand-magic-sparkles text-teal-highlight fs-4 mb-2"></i>
+                            <p class="small mb-0">Doctor's AI summary and prescription will appear here once the session is finalized.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Health Information & Support -->
+            <div class="room-card p-3 bg-light bg-opacity-50">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="fa-solid fa-shield-heart text-teal-highlight fs-5"></i>
+                    <h6 class="fw-bold text-dark mb-0 small">Synchronized Audio & Chat</h6>
+                </div>
+                <p class="text-muted small mb-0" style="font-size: 11px; line-height: 1.4;">
+                    Your speech and messages are synchronized in real-time with Dr. {{ consultation.doctor.last_name|default:consultation.doctor.username }}. Speak freely or type messages.
+                </p>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Synchronized Live Conversation & Audio Controls -->
+        <div class="col-lg-8 d-flex flex-column gap-3">
+            <!-- Voice & Microphone Panel for Patient -->
+            <div class="room-card p-3 text-center">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold text-uppercase text-teal-highlight"><i class="fa-solid fa-microphone-lines me-1"></i> Patient Live Voice Input</span>
+                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill" id="mic-status-label">Voice Ready</span>
+                </div>
+
+                <!-- Live Waveform Display -->
+                <div class="d-flex align-items-center justify-content-center gap-1 my-2 rounded-4 py-2" style="background-color: #F4FAFA; border: 1px solid #67DDE0;" id="waveform-box">
+                    <div class="waveform-bar" id="pbar-0"></div>
+                    <div class="waveform-bar" id="pbar-1"></div>
+                    <div class="waveform-bar" id="pbar-2"></div>
+                    <div class="waveform-bar" id="pbar-3"></div>
+                    <div class="waveform-bar" id="pbar-4"></div>
+                    <div class="waveform-bar" id="pbar-5"></div>
+                    <div class="waveform-bar" id="pbar-6"></div>
+                    <div class="waveform-bar" id="pbar-7"></div>
+                    <div class="waveform-bar" id="pbar-8"></div>
+                    <div class="waveform-bar" id="pbar-9"></div>
+                    <div class="waveform-bar" id="pbar-10"></div>
+                    <div class="waveform-bar" id="pbar-11"></div>
+                </div>
+
+                <!-- Voice Recording Controls -->
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-2 flex-wrap">
+                    <button class="btn action-btn-teal px-4 py-2 rounded-pill fw-bold small" id="btn-patient-mic" onclick="togglePatientVoice()">
+                        <i class="fa-solid fa-microphone me-1.5"></i> Speak with Doctor (Live Mic)
+                    </button>
+                </div>
+
+                <!-- Live Interim Speech Stream Preview -->
+                <div id="patient-live-preview" class="p-2 mt-2 rounded-3 small d-none" style="background-color: #E6F4F2; border: 1px dashed #078A83; color: #078A83; font-style: italic;">
+                    <span class="spinner-grow spinner-grow-sm me-1 text-teal-highlight" role="status" style="width: 8px; height: 8px;"></span>
+                    <span id="patient-interim-text">Listening to your voice...</span>
+                </div>
+            </div>
+
+            <!-- Synchronized Chat Stream Box -->
+            <div class="room-card p-3 d-flex flex-column flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom" style="border-color: #67DDE0 !important;">
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-comments text-teal-highlight me-1.5"></i> Live Consultation Dialogue</h6>
+                        <span class="badge bg-light text-teal-highlight border" style="font-size: 10px;">Synchronized</span>
+                    </div>
+                    <span class="text-muted" style="font-size: 11px;" id="msg-sync-info">Connected with Doctor</span>
+                </div>
+
+                <!-- Messages Stream -->
+                <div class="chat-container" id="patient-chat-box">
+                    {% for msg in messages %}
+                        <div class="msg-bubble {% if msg.speaker == 'Doctor' %}doctor{% else %}patient{% endif %}" data-msg-id="{{ msg.id }}">
+                            <div class="fw-bold mb-0.5" style="font-size: 11px; opacity: 0.9;">
+                                {% if msg.speaker == 'Doctor' %}
+                                    <i class="fa-solid fa-user-doctor me-1"></i> Dr. {{ consultation.doctor.last_name|default:consultation.doctor.username }}
+                                {% else %}
+                                    <i class="fa-solid fa-user me-1"></i> You (Patient)
+                                {% endif %}
+                            </div>
+                            <div>{{ msg.text }}</div>
+                            <div class="msg-meta">
+                                <span>{{ msg.created_at|date:"H:i:s" }}</span>
+                                {% if msg.speaker == 'Patient' %}<i class="fa-solid fa-check-double ms-1" style="font-size: 9px;"></i>{% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center my-auto py-5 text-muted" id="chat-empty-state">
+                            <div class="rounded-circle bg-light d-inline-flex p-3 mb-2 border" style="border-color: #67DDE0 !important;">
+                                <i class="fa-solid fa-headset text-teal-highlight fs-3"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">Consultation Room Connected</h6>
+                            <p class="small text-muted mb-0">Say hello or type what symptoms you're experiencing below to begin.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Message Input Bar -->
+                <div class="d-flex gap-2 align-items-center pt-3 mt-2 border-top" style="border-color: #67DDE0 !important;">
+                    <div class="input-group">
+                        <input type="text" id="patient-msg-input" class="form-control form-control-lg bg-white small text-dark rounded-start-pill ps-3" placeholder="Type your message or answer for the doctor..." style="border: 1px solid #67DDE0; font-size: 13.5px;" onkeydown="handlePatientMsgKey(event)">
+                        <button class="btn action-btn-teal px-4 rounded-end-pill fw-bold" onclick="sendPatientMessage()">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const consultationId = {{ consultation.id }};
+    let lastMsgId = {% if messages.last %}{{ messages.last.id }}{% else %}0{% endif %};
+    let isVoiceActive = false;
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let syncInterval = null;
+
+    // Audio & Speech objects
+    let micStream = null;
+    let mediaRec = null;
+    let patientAudioChunks = [];
+    let audioCtx = null;
+    let analyserNode = null;
+    let animFrame = null;
+    let speechRecInstance = null;
+
+    // Timer
+    timerInterval = setInterval(() => {
+        timerSeconds++;
+        const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+        const secs = (timerSeconds % 60).toString().padStart(2, '0');
+        const timerEl = document.getElementById('room-timer');
+        if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+    }, 1000);
+
+    // Auto scroll chat to bottom
+    function scrollChatToBottom() {
+        const chatBox = document.getElementById('patient-chat-box');
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    scrollChatToBottom();
+
+    // Send text message
+    function sendPatientMessage() {
+        const input = document.getElementById('patient-msg-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Hide empty state if present
+        const emptyState = document.getElementById('chat-empty-state');
+        if (emptyState) emptyState.remove();
+
+        // Optimistic UI append
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        const tempId = 'temp-' + Date.now();
+        appendMessageBubble('Patient', text, timeStr, tempId);
+        input.value = '';
+        scrollChatToBottom();
+
+        // Send to backend
+        const formData = new FormData();
+        formData.append('speaker', 'Patient');
+        formData.append('text', text);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`/consultations/${consultationId}/send-message/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success' && data.message) {
+                lastMsgId = Math.max(lastMsgId, data.message.id);
+                const tempEl = document.querySelector(`[data-msg-id="${tempId}"]`);
+                if (tempEl) tempEl.setAttribute('data-msg-id', data.message.id);
+            }
+        })
+        .catch(err => {
+            console.error('Send error:', err);
+        });
+    }
+
+    function handlePatientMsgKey(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendPatientMessage();
+        }
+    }
+
+    function appendMessageBubble(speaker, text, timeStr, msgId) {
+        const chatBox = document.getElementById('patient-chat-box');
+        const isDoctor = (speaker === 'Doctor');
+        const bubble = document.createElement('div');
+        bubble.className = `msg-bubble ${isDoctor ? 'doctor' : 'patient'}`;
+        if (msgId) bubble.setAttribute('data-msg-id', msgId);
+
+        bubble.innerHTML = `
+            <div class="fw-bold mb-0.5" style="font-size: 11px; opacity: 0.9;">
+                ${isDoctor ? '<i class="fa-solid fa-user-doctor me-1"></i> Dr. {{ consultation.doctor.last_name|default:consultation.doctor.username }}' : '<i class="fa-solid fa-user me-1"></i> You (Patient)'}
+            </div>
+            <div>${escapeHtml(text)}</div>
+            <div class="msg-meta">
+                <span>${timeStr}</span>
+                ${!isDoctor ? '<i class="fa-solid fa-check-double ms-1" style="font-size: 9px;"></i>' : ''}
+            </div>
+        `;
+
+        chatBox.appendChild(bubble);
+        scrollChatToBottom();
+    }
+
+    function escapeHtml(string) {
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                '/': '&#x2F;',
+                '`': '&#x60;',
+                '=': '&#x3D;'
+            }[s];
+        });
+    }
+
+    // Live Voice Recognition & Recording for Patient
+    async function togglePatientVoice() {
+        const btn = document.getElementById('btn-patient-mic');
+        const statusLbl = document.getElementById('mic-status-label');
+        const previewBox = document.getElementById('patient-live-preview');
+        const previewText = document.getElementById('patient-interim-text');
+
+        if (!isVoiceActive) {
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                isVoiceActive = true;
+                btn.innerHTML = '<i class="fa-solid fa-microphone-slash me-1.5"></i> Stop Microphone';
+                btn.style.backgroundColor = '#FF6B21';
+                statusLbl.innerHTML = '<span class="spinner-grow spinner-grow-sm text-danger me-1"></span> <span class="text-danger fw-bold">Live Speaking</span>';
+
+                // Setup MediaRecorder
+                patientAudioChunks = [];
+                mediaRec = new MediaRecorder(micStream);
+                mediaRec.ondataavailable = e => {
+                    if (e.data && e.data.size > 0) patientAudioChunks.push(e.data);
+                };
+                mediaRec.start(1000);
+
+                // Waveform visualizer
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const src = audioCtx.createMediaStreamSource(micStream);
+                    analyserNode = audioCtx.createAnalyser();
+                    analyserNode.fftSize = 32;
+                    src.connect(analyserNode);
+                    const dataArr = new Uint8Array(analyserNode.frequencyBinCount);
+
+                    function updateWave() {
+                        if (!isVoiceActive) return;
+                        analyserNode.getByteFrequencyData(dataArr);
+                        for (let i = 0; i < 12; i++) {
+                            const val = dataArr[i] || 0;
+                            const h = Math.max(6, Math.min(36, Math.floor(val / 5.5)));
+                            const bar = document.getElementById(`pbar-${i}`);
+                            if (bar) bar.style.height = `${h}px`;
+                        }
+                        animFrame = requestAnimationFrame(updateWave);
+                    }
+                    updateWave();
+                } catch(e) {}
+
+                // SpeechRecognition
+                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRec) {
+                    speechRecInstance = new SpeechRec();
+                    speechRecInstance.continuous = true;
+                    speechRecInstance.interimResults = true;
+                    speechRecInstance.lang = 'en-US';
+
+                    speechRecInstance.onresult = function(event) {
+                        let interim = '';
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            const part = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                const spoken = part.trim();
+                                if (spoken) {
+                                    sendSpokenMessage(spoken);
+                                }
+                                previewBox.classList.add('d-none');
+                            } else {
+                                interim += part;
+                                previewBox.classList.remove('d-none');
+                                previewText.innerText = `You are saying: "${interim}"`;
+                            }
+                        }
+                    };
+
+                    speechRecInstance.onerror = err => console.log('Speech error:', err);
+                    speechRecInstance.onend = () => {
+                        if (isVoiceActive && speechRecInstance) {
+                            try { speechRecInstance.start(); } catch(e) {}
+                        }
+                    };
+                    try { speechRecInstance.start(); } catch(e) {}
+                }
+
+            } catch(err) {
+                alert(`Microphone permission error: ${err.message}`);
+            }
+        } else {
+            // Stop voice
+            isVoiceActive = false;
+            btn.innerHTML = '<i class="fa-solid fa-microphone me-1.5"></i> Speak with Doctor (Live Mic)';
+            btn.style.backgroundColor = '#078A83';
+            statusLbl.innerHTML = 'Voice Standby';
+            previewBox.classList.add('d-none');
+
+            if (animFrame) cancelAnimationFrame(animFrame);
+            for (let i = 0; i < 12; i++) {
+                const bar = document.getElementById(`pbar-${i}`);
+                if (bar) bar.style.height = '8px';
+            }
+
+            if (speechRecInstance) speechRecInstance.stop();
+            if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
+            if (micStream) micStream.getTracks().forEach(t => t.stop());
+        }
+    }
+
+    function sendSpokenMessage(text) {
+        const emptyState = document.getElementById('chat-empty-state');
+        if (emptyState) emptyState.remove();
+
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        const tempId = 'temp-' + Date.now();
+        appendMessageBubble('Patient', text, timeStr, tempId);
+
+        const formData = new FormData();
+        formData.append('speaker', 'Patient');
+        formData.append('text', text);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`/consultations/${consultationId}/send-message/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success' && data.message) {
+                lastMsgId = Math.max(lastMsgId, data.message.id);
+                const tempEl = document.querySelector(`[data-msg-id="${tempId}"]`);
+                if (tempEl) tempEl.setAttribute('data-msg-id', data.message.id);
+            }
+        });
+    }
+
+    function transcribePatientAudio() {
+        if (patientAudioChunks.length === 0) return;
+        const blob = new Blob(patientAudioChunks, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('speaker', 'Patient');
+        formData.append('audio_file', blob, 'patient_voice.webm');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`/consultations/${consultationId}/send-message/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success' && data.message) {
+                lastMsgId = Math.max(lastMsgId, data.message.id);
+                appendMessageBubble('Patient', data.message.text, data.message.timestamp, data.message.id);
+            }
+        });
+    }
+
+    // Real-Time Synchronizer Polling Loop (every 1.5s)
+    function pollSyncConsultation() {
+        fetch(`/consultations/${consultationId}/sync/?last_id=${lastMsgId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.messages && data.messages.length > 0) {
+                const emptyState = document.getElementById('chat-empty-state');
+                if (emptyState) emptyState.remove();
+
+                data.messages.forEach(msg => {
+                    if (msg.id > lastMsgId) {
+                        lastMsgId = msg.id;
+                        // Check if already rendered
+                        const exists = document.querySelector(`[data-msg-id="${msg.id}"]`);
+                        if (!exists) {
+                            appendMessageBubble(msg.speaker, msg.text, msg.timestamp, msg.id);
+                        }
+                    }
+                });
+            }
+
+            // Sync Status & Documents
+            if (data.status) {
+                const pill = document.getElementById('consultation-status-pill');
+                if (pill) {
+                    pill.innerText = data.status;
+                    if (data.status === 'COMPLETED') {
+                        pill.className = 'badge bg-success text-white';
+                    }
+                }
+            }
+
+            // Render Documents if updated
+            if (data.documents && Object.keys(data.documents).length > 0) {
+                const area = document.getElementById('docs-content-area');
+                let html = '<div class="d-flex flex-column gap-2">';
+                let count = 0;
+                Object.keys(data.documents).forEach(k => {
+                    const doc = data.documents[k];
+                    count++;
+                    const docName = k.replace(/_/g, ' ');
+                    html += `
+                        <div class="p-3 bg-light rounded-3 border" style="border-color: #67DDE0 !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold small text-dark">${docName}</span>
+                                <a href="/consultations/document/${doc.id}/export/pdf/" target="_blank" class="btn btn-sm action-btn-teal rounded-pill px-2.5 py-0.5" style="font-size: 11px;">
+                                    <i class="fa-solid fa-download me-1"></i> PDF
+                                </a>
+                            </div>
+                            <div class="small text-muted" style="font-size: 11.5px; max-height: 80px; overflow-y: auto; white-space: pre-wrap;">${escapeHtml(doc.content.substring(0, 150))}...</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                if (area) area.innerHTML = html;
+                const badge = document.getElementById('docs-count-badge');
+                if (badge) badge.innerText = `${count} Available`;
+            }
+        })
+        .catch(err => {
+            console.log('Sync error:', err);
+        });
+    }
+
+    // Start polling sync loop
+    syncInterval = setInterval(pollSyncConsultation, 1500);
+
+</script>
+{% endblock %}

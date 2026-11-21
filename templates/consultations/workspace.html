@@ -1,0 +1,980 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Consultation Workspace — MediScribe{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #F4FAFA !important;
+        color: #078A83;
+    }
+    .workspace-container {
+        height: calc(100vh - 65px);
+        overflow: hidden;
+    }
+    .workspace-sidebar {
+        background-color: #FFFFFF;
+        border-right: 1px solid #67DDE0;
+        height: 100%;
+        overflow-y: auto;
+    }
+    .workspace-center {
+        height: 100%;
+        overflow-y: auto;
+    }
+    .workspace-right {
+        background-color: #FFFFFF;
+        border-left: 1px solid #67DDE0;
+        height: 100%;
+        overflow-y: auto;
+    }
+    .admin-card {
+        background-color: #FFFFFF;
+        border: 1px solid #67DDE0;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(7, 138, 131, 0.06);
+    }
+    .text-teal-highlight {
+        color: #078A83 !important;
+    }
+    .bg-teal-highlight {
+        background-color: #078A83 !important;
+    }
+    .action-btn-teal {
+        background-color: #078A83;
+        color: #FFFFFF !important;
+        border: none;
+        font-weight: 500;
+    }
+    .action-btn-teal:hover {
+        background-color: #078A83;
+        opacity: 0.92;
+        color: #FFFFFF !important;
+    }
+    .waveform-bar {
+        width: 5px;
+        height: 8px;
+        background-color: #078A83;
+        border-radius: 3px;
+        transition: height 0.05s ease-out;
+    }
+    .speaker-pill {
+        cursor: pointer;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #67DDE0;
+        background-color: #F4FAFA;
+        color: #078A83;
+        transition: all 0.2s ease;
+    }
+    .speaker-pill.active {
+        background-color: #078A83 !important;
+        color: #FFFFFF !important;
+        border-color: #078A83 !important;
+        box-shadow: 0 2px 8px rgba(7, 138, 131, 0.25);
+    }
+    .chat-bubble {
+        max-width: 85%;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    .chat-bubble.doctor {
+        background-color: #FFFFFF;
+        border: 1px solid #67DDE0;
+        color: #078A83;
+        align-self: flex-end;
+    }
+    .chat-bubble.assistant {
+        background-color: #F4FAFA;
+        border: 1px solid #67DDE0;
+        color: #078A83;
+        align-self: flex-start;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Topbar Header -->
+<div class="bg-white border-bottom py-2.5 px-4 d-flex justify-content-between align-items-center" style="height: 65px; position: sticky; top: 0; z-index: 1000; border-color: #67DDE0 !important;">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-sm" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83; font-weight: 600;"><i class="fa-solid fa-arrow-left me-1"></i> Exit Workspace</a>
+        <div class="ps-3 d-flex flex-column" style="line-height: 1.1; border-left: 1px solid #67DDE0;">
+            <span class="fw-bold fs-6" style="color: #078A83;">Consultation Session #{{ consultation.id }}</span>
+            <span style="font-size: 9px; color: #078A83; opacity: 0.85;">Department: {{ consultation.department }} • Visit Type: {{ consultation.visit_type }}</span>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge px-3 py-1.5 small d-flex align-items-center gap-1.5" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #67DDE0;" id="mic-status-badge">
+            <i class="fa-solid fa-microphone-lines text-teal-highlight"></i> Voice & Text Ready
+        </span>
+        <div class="ps-3 d-flex align-items-center gap-2" style="border-left: 1px solid #67DDE0;">
+            <div class="d-flex flex-column text-end" style="line-height: 1.1;">
+                <span class="fw-bold small" style="color: #078A83;">Dr. {{ request.user.last_name|default:request.user.username }}</span>
+                <span style="font-size: 9px; color: #078A83; opacity: 0.85;">Authorized Physician</span>
+            </div>
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-teal-highlight fw-bold" style="width: 34px; height: 34px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                <i class="fa-solid fa-user-doctor" style="font-size: 13px;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid p-0">
+    <div class="row g-0 workspace-container">
+        <!-- 1. LEFT COLUMN: Patient Info & Context -->
+        <div class="col-md-3 workspace-sidebar p-3 d-flex flex-column justify-content-between">
+            <div class="d-flex flex-column gap-3">
+                <!-- Patient Card -->
+                <div class="admin-card p-3">
+                    <h6 class="fw-bold mb-3 pb-2" style="color: #078A83; border-bottom: 1px solid #67DDE0;"><i class="fa-solid fa-id-card text-teal-highlight me-1.5"></i> Patient File</h6>
+                    <div class="d-flex flex-column gap-2.5 small">
+                        <div>
+                            <span class="d-block" style="font-size: 10px; color: #078A83; opacity: 0.8;">NAME</span>
+                            <span class="fw-bold" style="color: #078A83;">{{ patient.name }}</span>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <span class="d-block" style="font-size: 10px; color: #078A83; opacity: 0.8;">DOB / AGE</span>
+                                <span class="fw-bold" style="color: #078A83;">{{ patient.date_of_birth|date:"Y-m-d" }}</span>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block" style="font-size: 10px; color: #078A83; opacity: 0.8;">GENDER</span>
+                                <span class="fw-bold" style="color: #078A83;">{{ patient.gender }}</span>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <span class="d-block" style="font-size: 10px; color: #078A83; opacity: 0.8;">BLOOD GROUP</span>
+                                <span class="fw-bold" style="color: #078A83;">{{ patient.blood_group|default:"O+" }}</span>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block" style="font-size: 10px; color: #078A83; opacity: 0.8;">PATIENT ID</span>
+                                <span class="fw-bold" style="color: #078A83;">PT-{{ patient.id|add:"10000" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History & Allergies -->
+                <div class="admin-card p-3">
+                    <h6 class="fw-bold mb-2 pb-2" style="color: #078A83; border-bottom: 1px solid #67DDE0;"><i class="fa-solid fa-triangle-exclamation me-1.5" style="color: #FF6B21;"></i> Clinical Flags</h6>
+                    <div class="d-flex flex-column gap-2 small">
+                        <div>
+                            <span class="fw-bold d-block" style="font-size: 10px; color: #FF6B21;">ALLERGIES</span>
+                            <span style="color: #078A83; opacity: 0.9;">{{ patient.allergies|default:"No known drug allergies." }}</span>
+                        </div>
+                        <div>
+                            <span class="fw-bold d-block" style="font-size: 10px; color: #078A83;">CHRONIC CONDITIONS</span>
+                            <span style="color: #078A83; opacity: 0.9;">{{ patient.chronic_conditions|default:"No chronic conditions registered." }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documentation Types Definition & Legend Box -->
+                <div class="admin-card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid #67DDE0;">
+                        <h6 class="fw-bold mb-0" style="color: #078A83; font-size: 11.5px;">
+                            <i class="fa-solid fa-file-medical text-teal-highlight me-1"></i> Documentation Types
+                        </h6>
+                        <span class="badge py-0.5 px-2 rounded-pill" style="font-size: 9.5px; background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83;">Guide</span>
+                    </div>
+
+                    <!-- Exact Pill Bar matching design -->
+                    <div class="d-flex align-items-center justify-content-between p-1 rounded-pill mb-2.5" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <button type="button" class="btn btn-sm p-0 px-2 py-0.5 rounded-pill fw-bold doc-def-pill active" id="def-pill-soap" onclick="showDocDef('soap')" style="background-color: #078A83; color: #FFFFFF; font-size: 9.5px; border: none;">SOAP</button>
+                        <button type="button" class="btn btn-sm p-0 px-2 py-0.5 rounded-pill fw-bold doc-def-pill text-primary" id="def-pill-clinical" onclick="showDocDef('clinical')" style="font-size: 9.5px; border: none; background: transparent;">Clinical</button>
+                        <button type="button" class="btn btn-sm p-0 px-2 py-0.5 rounded-pill fw-bold doc-def-pill text-primary" id="def-pill-rx" onclick="showDocDef('rx')" style="font-size: 9.5px; border: none; background: transparent;">Rx</button>
+                        <button type="button" class="btn btn-sm p-0 px-2 py-0.5 rounded-pill fw-bold doc-def-pill text-primary" id="def-pill-discharge" onclick="showDocDef('discharge')" style="font-size: 9.5px; border: none; background: transparent;">Discharge</button>
+                        <button type="button" class="btn btn-sm p-0 px-2 py-0.5 rounded-pill fw-bold doc-def-pill text-primary" id="def-pill-followup" onclick="showDocDef('followup')" style="font-size: 9.5px; border: none; background: transparent;">Follow-up</button>
+                    </div>
+
+                    <!-- Dynamic Definition Content Area -->
+                    <div id="def-content-soap" class="doc-def-content p-2 rounded-3" style="background-color: #F4FAFA; border: 1px solid #67DDE0; font-size: 10px; line-height: 1.35; color: #07152D;">
+                        <span class="fw-bold d-block text-teal-highlight mb-1"><i class="fa-solid fa-list-check me-1"></i> SOAP (Subjective, Objective, Assessment, Plan)</span>
+                        <strong>S:</strong> Chief complaints & symptoms reported by patient.<br>
+                        <strong>O:</strong> Vitals, clinical exam & lab test observations.<br>
+                        <strong>A:</strong> Diagnostic assessment & clinical evaluations.<br>
+                        <strong>P:</strong> Prescribed care plan, therapeutics & orders.
+                    </div>
+
+                    <div id="def-content-clinical" class="doc-def-content p-2 rounded-3 d-none" style="background-color: #F4FAFA; border: 1px solid #67DDE0; font-size: 10px; line-height: 1.35; color: #07152D;">
+                        <span class="fw-bold d-block text-teal-highlight mb-1"><i class="fa-solid fa-notes-medical me-1"></i> Clinical Progress Note</span>
+                        Detailed encounter narrative recording patient history, physical examination findings, symptom timeline, differential diagnoses, and physician findings.
+                    </div>
+
+                    <div id="def-content-rx" class="doc-def-content p-2 rounded-3 d-none" style="background-color: #F4FAFA; border: 1px solid #67DDE0; font-size: 10px; line-height: 1.35; color: #07152D;">
+                        <span class="fw-bold d-block text-teal-highlight mb-1"><i class="fa-solid fa-prescription me-1"></i> Rx (Medical Prescription)</span>
+                        Structured medication order specifying pharmaceutical drug names, exact dosage, route (oral/topical/IV), administration frequency, duration, and instructions.
+                    </div>
+
+                    <div id="def-content-discharge" class="doc-def-content p-2 rounded-3 d-none" style="background-color: #F4FAFA; border: 1px solid #67DDE0; font-size: 10px; line-height: 1.35; color: #07152D;">
+                        <span class="fw-bold d-block text-teal-highlight mb-1"><i class="fa-solid fa-file-invoice me-1"></i> Discharge Summary</span>
+                        Formal hospital/visit summary documenting admission reason, clinical findings, course of treatment, discharge diagnoses, reconciled meds, and home care.
+                    </div>
+
+                    <div id="def-content-followup" class="doc-def-content p-2 rounded-3 d-none" style="background-color: #F4FAFA; border: 1px solid #67DDE0; font-size: 10px; line-height: 1.35; color: #07152D;">
+                        <span class="fw-bold d-block text-teal-highlight mb-1"><i class="fa-solid fa-calendar-check me-1"></i> Follow-up Recommendations</span>
+                        Post-consultation regimen detailing next scheduled visit timeline, required interval monitoring tests, recovery goals, and red-flag symptoms.
+                    </div>
+                </div>
+
+                <!-- Recent Visits -->
+                <div class="admin-card p-3">
+                    <h6 class="fw-bold mb-2 pb-2" style="color: #078A83; border-bottom: 1px solid #67DDE0;"><i class="fa-solid fa-clock-rotate-left text-teal-highlight me-1.5"></i> Previous Consultations</h6>
+                    <div class="d-flex flex-column gap-2">
+                        {% for visit in recent_consultations %}
+                            <div class="p-2 rounded-3 small" style="line-height: 1.2; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                                <span class="d-block fw-bold" style="font-size: 11px; color: #078A83;">{{ visit.department }} Consultation</span>
+                                <span style="font-size: 9px; color: #078A83; opacity: 0.8;">{{ visit.created_at|date:"Y-m-d" }} • Status: {{ visit.status }}</span>
+                            </div>
+                        {% empty %}
+                            <span class="small" style="color: #078A83; opacity: 0.8;">No previous visit records found.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workspace Status Panel -->
+            <div class="admin-card p-3 mt-3">
+                <h6 class="fw-bold mb-2" style="font-size: 11px; color: #078A83;"><i class="fa-solid fa-circle-nodes text-teal-highlight me-1"></i> Live Audio & AI Engine</h6>
+                <ul class="list-unstyled mb-0" style="font-size: 10px; color: #078A83; opacity: 0.9;">
+                    <li class="d-flex justify-content-between mb-1"><span>Live Microphone:</span> <span class="text-teal-highlight" id="lbl-recorder"><i class="fa-solid fa-microphone"></i> Enabled</span></li>
+                    <li class="d-flex justify-content-between mb-1"><span>Whisper Engine:</span> <span class="text-teal-highlight" id="lbl-stt"><i class="fa-solid fa-brain"></i> Groq Large-v3</span></li>
+                    <li class="d-flex justify-content-between mb-1"><span>LLM Server:</span> <span class="text-teal-highlight"><i class="fa-solid fa-bolt"></i> Groq AI</span></li>
+                    <li class="d-flex justify-content-between"><span>Database:</span> <span class="text-teal-highlight"><i class="fa-solid fa-database"></i> MySQL 8.0</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 2. CENTER COLUMN: Live Speech, Speaker Diarization & Text Format Entry -->
+        <div class="col-md-5 workspace-center p-3 d-flex flex-column gap-3">
+            <!-- Voice & Recording Panel -->
+            <div class="admin-card p-3 text-center">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold text-uppercase" style="color: #078A83;"><i class="fa-solid fa-waveform-lines text-teal-highlight me-1"></i> Live Consultation Audio</span>
+                    <span class="badge py-1 px-2.5 rounded-pill" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83;" id="session-timer">00:00</span>
+                </div>
+
+                <!-- Speaker Selector Pills (Doctor Speaking vs Patient Speaking) -->
+                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                    <span class="small fw-bold" style="font-size: 11px; color: #078A83;">Active Speaker:</span>
+                    <div class="speaker-pill active" id="pill-doctor" onclick="setSpeaker('Doctor')">
+                        <i class="fa-solid fa-user-doctor me-1"></i> Doctor Speaking
+                    </div>
+                    <div class="speaker-pill" id="pill-patient" onclick="setSpeaker('Patient')">
+                        <i class="fa-solid fa-user me-1"></i> Patient Speaking
+                    </div>
+                </div>
+
+                <!-- Real-Time Audio Waveform Display (Scales dynamically with real voice input) -->
+                <div class="d-flex align-items-center justify-content-center gap-1 my-2 rounded-4 py-3" style="background-color: #F4FAFA; border: 1px solid #67DDE0;" id="waveform-box">
+                    <div class="waveform-bar" id="bar-0"></div>
+                    <div class="waveform-bar" id="bar-1"></div>
+                    <div class="waveform-bar" id="bar-2"></div>
+                    <div class="waveform-bar" id="bar-3"></div>
+                    <div class="waveform-bar" id="bar-4"></div>
+                    <div class="waveform-bar" id="bar-5"></div>
+                    <div class="waveform-bar" id="bar-6"></div>
+                    <div class="waveform-bar" id="bar-7"></div>
+                    <div class="waveform-bar" id="bar-8"></div>
+                    <div class="waveform-bar" id="bar-9"></div>
+                    <div class="waveform-bar" id="bar-10"></div>
+                    <div class="waveform-bar" id="bar-11"></div>
+                </div>
+
+                <!-- Live Record Controls -->
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-2 flex-wrap">
+                    <button class="btn btn-teal-highlight bg-teal-highlight text-white px-3 py-2 rounded-pill fw-bold small" id="btn-start" onclick="startAudioAndSpeech()"><i class="fa-solid fa-microphone me-1.5"></i> Start Recording (Live Mic)</button>
+                    <button class="btn px-3 py-2 rounded-pill small d-none" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83;" id="btn-pause" onclick="togglePause()"><i class="fa-solid fa-pause me-1.5"></i> Pause</button>
+                    <button class="btn px-3 py-2 rounded-pill small d-none" style="background-color: #F4FAFA; border: 1px solid #078A83; color: #078A83;" id="btn-transcribe-now" onclick="transcribeRecordedAudioNow()"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Transcribe Audio</button>
+                    <button class="btn text-white px-4 py-2 rounded-pill fw-bold small d-none" style="background-color: #FF6B21; border: none;" id="btn-end" onclick="endRecording()"><i class="fa-solid fa-circle-stop me-1.5"></i> End & Generate Notes</button>
+                </div>
+            </div>
+
+            <!-- Live Speech & Direct Text Transcript Editor -->
+            <div class="admin-card p-3 flex-grow-1 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center pb-2 mb-2" style="border-bottom: 1px solid #67DDE0;">
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="fw-bold mb-0" style="color: #078A83;"><i class="fa-solid fa-quote-left text-teal-highlight me-1.5"></i> Consultation Conversation (Voice + Text)</h6>
+                        <span class="badge py-0.5 px-2" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #67DDE0; font-size: 10px;">Editable</span>
+                    </div>
+                    <span style="font-size: 10px; color: #078A83; opacity: 0.85;" id="stt-status">Ready. Click Start Recording or type dialogue below.</span>
+                </div>
+
+                <!-- Live Interim Speech Stream Indicator -->
+                <div id="live-speech-preview" class="p-2 mb-2 rounded-2 small d-none" style="background-color: #F4FAFA; border: 1px dashed #67DDE0; color: #078A83; font-style: italic;">
+                    <span class="spinner-grow spinner-grow-sm me-1 text-teal-highlight" role="status" style="width: 7px; height: 7px;"></span> <span id="interim-text">Listening...</span>
+                </div>
+
+                <!-- Live Editable Transcript Textarea -->
+                <textarea id="stt-transcript" class="form-control font-monospace small flex-grow-1 p-2.5 rounded-3 mb-2" rows="7" style="font-size: 12px; line-height: 1.6; background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83 !important;" placeholder="Your spoken audio will transcribe here in real-time. You can also type, edit, or paste your clinical dialogue directly...">{{ consultation.transcript|default:'' }}</textarea>
+
+                <!-- Text Format Conversation Entry Bar -->
+                <div class="d-flex gap-2 align-items-center pt-2" style="border-top: 1px solid #67DDE0;">
+                    <select id="text-speaker-select" class="form-select form-select-sm" style="width: 120px; background-color: #FFFFFF; border: 1px solid #67DDE0; color: #078A83; font-weight: 600;">
+                        <option value="Doctor">Doctor</option>
+                        <option value="Patient">Patient</option>
+                    </select>
+                    <input type="text" id="manual-dialogue-input" class="form-control form-control-sm bg-white" placeholder="Type what Doctor or Patient says and press Enter..." style="border: 1px solid #67DDE0; color: #078A83 !important;" onkeydown="handleDialogueKey(event)">
+                    <button class="btn btn-sm btn-teal-highlight bg-teal-highlight text-white px-3 fw-medium" onclick="addManualDialogue()"><i class="fa-solid fa-plus me-1"></i> Add</button>
+                </div>
+            </div>
+
+            <!-- Real-time Detected Clinical Suggestions -->
+            <div class="admin-card p-3">
+                <h6 class="fw-bold mb-2" style="font-size: 12px; color: #078A83;"><i class="fa-solid fa-lightbulb me-1.5" style="color: #FF6B21;"></i> Live Clinical Keyword Suggestions</h6>
+                <div id="ai-suggestions" class="d-flex flex-wrap gap-2">
+                    <span class="small" style="color: #078A83; opacity: 0.85;">Speak or type symptoms to detect clinical recommendations in real-time...</span>
+                </div>
+            </div>
+
+            <!-- Custom AI chat assistant -->
+            <div class="admin-card p-3 d-flex flex-column" style="min-height: 170px;">
+                <div class="pb-1.5 mb-2 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #67DDE0;">
+                    <h6 class="fw-bold mb-0" style="font-size: 12px; color: #078A83;"><i class="fa-solid fa-robot text-teal-highlight me-1.5"></i> Ask Clinical Assistant</h6>
+                    <span style="font-size: 9px; color: #078A83; opacity: 0.85;">Query patient history, drug interactions, or summarize</span>
+                </div>
+                <div class="flex-grow-1 overflow-y-auto d-flex flex-column gap-2 mb-2 p-2 rounded-3" id="chat-conversation" style="max-height: 110px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                    <div class="chat-bubble assistant">Ask me to check drug dosages, summarize conversation, or format certifications.</div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="chat-query" class="form-control form-control-sm bg-white" placeholder="Ask AI assistant..." style="border: 1px solid #67DDE0; color: #078A83 !important;">
+                    <button onclick="sendAssistantQuery()" class="btn btn-teal-highlight bg-teal-highlight text-white btn-sm px-3"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. RIGHT COLUMN: Generated Documents Review -->
+        <div class="col-md-4 workspace-right p-3 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2" style="border-bottom: 1px solid #67DDE0;">
+                    <h5 class="fw-bold mb-0" style="color: #078A83;"><i class="fa-solid fa-file-invoice text-teal-highlight me-1.5"></i> Document Review</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm dropdown-toggle" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83; font-weight: 600;" type="button" data-bs-toggle="dropdown"><i class="fa-solid fa-download text-teal-highlight me-1"></i> Export</button>
+                        <ul class="dropdown-menu dropdown-menu-end small shadow-sm" style="border: 1px solid #67DDE0;">
+                            <li><a class="dropdown-item" style="color: #078A83;" href="#" onclick="exportActiveDoc('pdf')"><i class="fa-regular fa-file-pdf me-1" style="color: #FF6B21;"></i> Export PDF</a></li>
+                            <li><a class="dropdown-item" style="color: #078A83;" href="#" onclick="exportActiveDoc('json')"><i class="fa-regular fa-file-code me-1 text-teal-highlight"></i> Export EHR JSON</a></li>
+                            <li><a class="dropdown-item" style="color: #078A83;" href="#" onclick="exportActiveDoc('txt')"><i class="fa-regular fa-file-lines me-1 text-teal-highlight"></i> Export Text</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Document Tabs -->
+                <ul class="nav nav-pills nav-fill small p-1 rounded-pill mb-3" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                    <li class="nav-item"><a class="nav-link rounded-pill py-1.5 active fw-semibold" href="#" id="tab-SOAP" onclick="switchDocTab('SOAP')">SOAP</a></li>
+                    <li class="nav-item"><a class="nav-link rounded-pill py-1.5 fw-semibold" href="#" id="tab-CLINICAL_NOTE" onclick="switchDocTab('CLINICAL_NOTE')">Clinical</a></li>
+                    <li class="nav-item"><a class="nav-link rounded-pill py-1.5 fw-semibold" href="#" id="tab-PRESCRIPTION" onclick="switchDocTab('PRESCRIPTION')">Rx</a></li>
+                    <li class="nav-item"><a class="nav-link rounded-pill py-1.5 fw-semibold" href="#" id="tab-DISCHARGE_SUMMARY" onclick="switchDocTab('DISCHARGE_SUMMARY')">Discharge</a></li>
+                    <li class="nav-item"><a class="nav-link rounded-pill py-1.5 fw-semibold" href="#" id="tab-VISIT_SUMMARY" onclick="switchDocTab('VISIT_SUMMARY')">Follow-up</a></li>
+                </ul>
+
+                <!-- Textarea Editor -->
+                <div class="mb-3">
+                    <textarea id="document-textarea" class="form-control font-monospace small" rows="18" style="font-size: 12px; line-height: 1.5; background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83 !important;">Speak or type your conversation in the center panel, then click "End & Generate Notes" to produce clinical documentation with Groq AI.</textarea>
+                </div>
+            </div>
+
+            <!-- Review Actions -->
+            <div class="pt-3 d-flex flex-column gap-2" style="border-top: 1px solid #67DDE0;">
+                <div class="d-flex justify-content-between align-items-center small mb-1">
+                    <span style="color: #078A83; opacity: 0.85;"><i class="fa-solid fa-circle-info text-teal-highlight me-1"></i> Doctor authorization required</span>
+                    <span id="doc-status-badge" class="badge" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83;">Draft</span>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button class="btn w-100 py-2 small rounded-pill" style="background-color: #FFFFFF; border: 1px solid #67DDE0; color: #078A83; font-weight: 600;" onclick="saveActiveDocument()"><i class="fa-solid fa-floppy-disk text-teal-highlight me-1.5"></i> Save Changes</button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-teal-highlight bg-teal-highlight text-white w-100 py-2 small rounded-pill fw-bold" onclick="approveActiveDocument()"><i class="fa-solid fa-check-double me-1.5"></i> Approve Draft</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let documentsData = {
+        'SOAP': { id: null, content: 'Awaiting consultation completion and AI processing...', is_approved: false },
+        'CLINICAL_NOTE': { id: null, content: 'Awaiting consultation completion and AI processing...', is_approved: false },
+        'PRESCRIPTION': { id: null, content: 'Awaiting consultation completion and AI processing...', is_approved: false },
+        'DISCHARGE_SUMMARY': { id: null, content: 'Awaiting consultation completion and AI processing...', is_approved: false },
+        'VISIT_SUMMARY': { id: null, content: 'Awaiting consultation completion and AI processing...', is_approved: false }
+    };
+    
+    {% for doc in documents %}
+        documentsData['{{ doc.document_type }}'] = {
+            id: {{ doc.id }},
+            content: `{{ doc.content|escapejs }}`,
+            is_approved: {{ doc.is_approved|yesno:"true,false" }}
+        };
+    {% endfor %}
+
+    let activeDocTab = 'SOAP';
+    let isRecording = false;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let currentSpeaker = 'Doctor';
+    
+    // Media & Audio Recording Objects
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let microphoneStream = null;
+    let audioContext = null;
+    let analyser = null;
+    let animationFrameId = null;
+    let speechRecognition = null;
+
+    function switchDocTab(tabName) {
+        document.querySelectorAll('.nav-link').forEach(link => {
+            if (link.id === 'tab-' + tabName) {
+                link.classList.add('active');
+                link.classList.add('bg-teal-highlight');
+                link.classList.add('text-white');
+            } else {
+                link.classList.remove('active');
+                link.classList.remove('bg-teal-highlight');
+                link.classList.remove('text-white');
+            }
+        });
+        
+        activeDocTab = tabName;
+        const textarea = document.getElementById('document-textarea');
+        const doc = documentsData[tabName];
+        textarea.value = doc.content;
+        
+        const badge = document.getElementById('doc-status-badge');
+        if (doc.is_approved) {
+            badge.innerText = 'Approved & Finalized';
+            badge.style.backgroundColor = '#078A83';
+            badge.style.color = '#FFFFFF';
+            badge.className = 'badge';
+        } else {
+            badge.innerText = 'Draft - Pending Review';
+            badge.style.backgroundColor = '#F4FAFA';
+            badge.style.border = '1px solid #67DDE0';
+            badge.style.color = '#078A83';
+            badge.className = 'badge';
+        }
+    }
+    switchDocTab('SOAP');
+
+    function setSpeaker(speaker) {
+        currentSpeaker = speaker;
+        document.getElementById('pill-doctor').classList.toggle('active', speaker === 'Doctor');
+        document.getElementById('pill-patient').classList.toggle('active', speaker === 'Patient');
+        document.getElementById('text-speaker-select').value = speaker;
+    }
+
+    const consultationId = {{ consultation.id }};
+    let doctorLastMsgId = {% if messages.last %}{{ messages.last.id }}{% else %}0{% endif %};
+
+    function broadcastDoctorMessage(speaker, text, audioBlob=null) {
+        const formData = new FormData();
+        formData.append('speaker', speaker);
+        formData.append('text', text);
+        if (audioBlob) {
+            formData.append('audio_file', audioBlob, 'doctor_voice.webm');
+        }
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch(`/consultations/${consultationId}/send-message/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success' && data.message) {
+                doctorLastMsgId = Math.max(doctorLastMsgId, data.message.id);
+            }
+        })
+        .catch(err => console.log('Doctor send error:', err));
+    }
+
+    function addManualDialogue() {
+        const input = document.getElementById('manual-dialogue-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const speaker = document.getElementById('text-speaker-select').value;
+        const formattedLine = `${speaker}: ${text}`;
+        
+        const transcriptArea = document.getElementById('stt-transcript');
+        if (transcriptArea.value.trim() === '') {
+            transcriptArea.value = formattedLine;
+        } else {
+            transcriptArea.value += '\n\n' + formattedLine;
+        }
+        transcriptArea.scrollTop = transcriptArea.scrollHeight;
+        
+        triggerLiveSuggestions(text);
+        broadcastDoctorMessage(speaker, text);
+        input.value = '';
+    }
+
+    function handleDialogueKey(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addManualDialogue();
+        }
+    }
+
+    // Start combined MediaRecorder (Audio capture) + Speech-to-Text
+    async function startAudioAndSpeech() {
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Microphone access is not available. Please check that you are running on http://127.0.0.1 or https.');
+                return;
+            }
+
+            // 1. Request microphone access
+            microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // 2. Setup MediaRecorder for real audio capture
+            audioChunks = [];
+            let options = { mimeType: 'audio/webm' };
+            if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                options = {};
+            }
+
+            mediaRecorder = new MediaRecorder(microphoneStream, options);
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.start(1000); // Collect slice every 1s
+
+            // 3. Real-time AudioContext waveform visualizer
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(microphoneStream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 32;
+                source.connect(analyser);
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                function updateWaveform() {
+                    if (!isRecording) return;
+                    analyser.getByteFrequencyData(dataArray);
+
+                    for (let i = 0; i < 12; i++) {
+                        const val = dataArray[i] || 0;
+                        const height = Math.max(6, Math.min(38, Math.floor(val / 5.5)));
+                        const bar = document.getElementById(`bar-${i}`);
+                        if (bar) bar.style.height = `${height}px`;
+                    }
+                    animationFrameId = requestAnimationFrame(updateWaveform);
+                }
+                updateWaveform();
+            } catch(e) {
+                console.log('Waveform fallback:', e);
+            }
+
+            // 4. Setup SpeechRecognition for real-time text transcription
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRec) {
+                speechRecognition = new SpeechRec();
+                speechRecognition.continuous = true;
+                speechRecognition.interimResults = true;
+                speechRecognition.lang = 'en-US';
+
+                const previewBox = document.getElementById('live-speech-preview');
+                const previewText = document.getElementById('interim-text');
+
+                speechRecognition.onresult = function(event) {
+                    let interimStr = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        const transcriptPart = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            const spoken = transcriptPart.trim();
+                            if (spoken) {
+                                const transcriptArea = document.getElementById('stt-transcript');
+                                const line = `${currentSpeaker}: ${spoken}`;
+                                if (transcriptArea.value.trim() === '') {
+                                    transcriptArea.value = line;
+                                } else {
+                                    transcriptArea.value += '\n\n' + line;
+                                }
+                                transcriptArea.scrollTop = transcriptArea.scrollHeight;
+                                triggerLiveSuggestions(spoken);
+                                broadcastDoctorMessage(currentSpeaker, spoken);
+                            }
+                            previewBox.classList.add('d-none');
+                        } else {
+                            interimStr += transcriptPart;
+                            previewBox.classList.remove('d-none');
+                            previewText.innerText = `${currentSpeaker}: ${interimStr}`;
+                        }
+                    }
+                };
+
+                speechRecognition.onerror = function(err) {
+                    console.log('SpeechRecognition error:', err.error);
+                };
+
+                speechRecognition.onend = function() {
+                    if (isRecording && speechRecognition) {
+                        try { speechRecognition.start(); } catch(e) {}
+                    }
+                };
+
+                try { speechRecognition.start(); } catch(e) {}
+            }
+
+            // 5. Update UI States
+            isRecording = true;
+            document.getElementById('btn-start').classList.add('d-none');
+            document.getElementById('btn-pause').classList.remove('d-none');
+            document.getElementById('btn-transcribe-now').classList.remove('d-none');
+            document.getElementById('btn-end').classList.remove('d-none');
+            document.getElementById('stt-status').innerHTML = '<span class="text-danger fw-bold">● Recording Live Audio</span> — Speak naturally into mic.';
+            document.getElementById('mic-status-badge').innerHTML = '<span class="spinner-grow spinner-grow-sm text-danger" role="status"></span> <span class="text-danger fw-bold">Microphone Active</span>';
+
+            // Start timer
+            secondsElapsed = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                let minutes = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                let seconds = (secondsElapsed % 60).toString().padStart(2, '0');
+                document.getElementById('session-timer').innerText = `${minutes}:${seconds}`;
+            }, 1000);
+
+        } catch (err) {
+            console.error('Microphone error:', err);
+            alert(`Microphone permission error: ${err.message}. Please click the reload icon in your browser.`);
+        }
+    }
+
+    function togglePause() {
+        const btn = document.getElementById('btn-pause');
+        if (btn.innerText.includes('Pause')) {
+            btn.innerHTML = '<i class="fa-solid fa-play me-1.5"></i> Resume';
+            isRecording = false;
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.pause();
+            }
+            if (speechRecognition) speechRecognition.stop();
+            clearInterval(timerInterval);
+            document.getElementById('stt-status').innerText = 'Recording paused. Click Resume or Transcribe Audio.';
+            document.getElementById('mic-status-badge').innerHTML = '<i class="fa-solid fa-circle-pause text-warning"></i> Paused';
+        } else {
+            btn.innerHTML = '<i class="fa-solid fa-pause me-1.5"></i> Pause';
+            isRecording = true;
+            if (mediaRecorder && mediaRecorder.state === 'paused') {
+                mediaRecorder.resume();
+            }
+            if (speechRecognition) {
+                try { speechRecognition.start(); } catch(e) {}
+            }
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                let minutes = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                let seconds = (secondsElapsed % 60).toString().padStart(2, '0');
+                document.getElementById('session-timer').innerText = `${minutes}:${seconds}`;
+            }, 1000);
+            document.getElementById('stt-status').innerHTML = '<span class="text-danger fw-bold">● Recording Live Audio</span> — Speak naturally.';
+            document.getElementById('mic-status-badge').innerHTML = '<span class="spinner-grow spinner-grow-sm text-danger" role="status"></span> <span class="text-danger fw-bold">Microphone Active</span>';
+        }
+    }
+
+    // Direct Whisper Audio Transcriber Button
+    function transcribeRecordedAudioNow() {
+        if (audioChunks.length === 0) {
+            alert('No audio recorded yet. Please speak into the microphone first.');
+            return;
+        }
+
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio', blob, 'audio_chunk.webm');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        document.getElementById('stt-status').innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-1"></span> Transcribing audio with Groq Whisper...';
+
+        fetch("{% url 'api_speech_transcribe' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.transcript) {
+                const transcriptArea = document.getElementById('stt-transcript');
+                const line = `${currentSpeaker}: ${data.transcript}`;
+                if (transcriptArea.value.trim() === '') {
+                    transcriptArea.value = line;
+                } else {
+                    transcriptArea.value += '\n\n' + line;
+                }
+                transcriptArea.scrollTop = transcriptArea.scrollHeight;
+                triggerLiveSuggestions(data.transcript);
+                document.getElementById('stt-status').innerHTML = '<i class="fa-solid fa-check text-success"></i> Audio transcribed with Groq Whisper!';
+            } else {
+                document.getElementById('stt-status').innerText = 'Could not transcribe. You can also type dialogue manually.';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('stt-status').innerText = 'Transcription request error.';
+        });
+    }
+
+    function triggerLiveSuggestions(text) {
+        const panel = document.getElementById('ai-suggestions');
+        const lower = text.toLowerCase();
+        let chips = [];
+
+        if (lower.includes('chest') || lower.includes('breath') || lower.includes('heart') || lower.includes('bp') || lower.includes('pressure')) {
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #67DDE0;"><i class="fa-solid fa-heart text-teal-highlight me-1"></i> Cardiovascular Evaluation</span>');
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #FF6B21; border: 1px solid #FF6B21;"><i class="fa-solid fa-stethoscope me-1"></i> Check ECG / Troponin</span>');
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #078A83;"><i class="fa-solid fa-file-waveform me-1"></i> ICD-10: I20.9 (Angina)</span>');
+        }
+        if (lower.includes('fever') || lower.includes('cough') || lower.includes('cold') || lower.includes('throat') || lower.includes('infection')) {
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #67DDE0;"><i class="fa-solid fa-virus text-teal-highlight me-1"></i> Upper Respiratory Screen</span>');
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #FF6B21; border: 1px solid #FF6B21;"><i class="fa-solid fa-capsules me-1"></i> Antipyretic: Paracetamol</span>');
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #078A83;"><i class="fa-solid fa-file-waveform me-1"></i> ICD-10: J06.9</span>');
+        }
+        if (lower.includes('fatigue') || lower.includes('thyroid') || lower.includes('weight') || lower.includes('sugar') || lower.includes('diabetes')) {
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #67DDE0;"><i class="fa-solid fa-flask text-teal-highlight me-1"></i> Order HbA1c & TSH Panel</span>');
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #078A83;"><i class="fa-solid fa-file-waveform me-1"></i> ICD-10: E11.9 (Type 2 DM)</span>');
+        }
+        if (lower.includes('headache') || lower.includes('dizzy') || lower.includes('pain') || lower.includes('migraine')) {
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #67DDE0;"><i class="fa-solid fa-brain text-teal-highlight me-1"></i> Neurological Screen</span>');
+            chips.push('<span class="badge py-1.5 px-2.5 rounded-pill" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #078A83;"><i class="fa-solid fa-file-waveform me-1"></i> ICD-10: G43.9</span>');
+        }
+
+        if (chips.length > 0) {
+            panel.innerHTML = chips.join(' ');
+        }
+    }
+
+    function endRecording() {
+        isRecording = false;
+        clearInterval(timerInterval);
+        if (speechRecognition) speechRecognition.stop();
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+        for (let i = 0; i < 12; i++) {
+            const bar = document.getElementById(`bar-${i}`);
+            if (bar) bar.style.height = `8px`;
+        }
+
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        if (microphoneStream) {
+            microphoneStream.getTracks().forEach(track => track.stop());
+        }
+
+        document.getElementById('stt-status').innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-1"></span> Processing audio & generating clinical documentation with Groq AI...';
+        
+        setTimeout(() => {
+            const finalTranscript = document.getElementById('stt-transcript').value.trim();
+            const formData = new FormData();
+            formData.append('transcript', finalTranscript);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            if (audioChunks.length > 0) {
+                const recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                formData.append('audio_file', recordedBlob, 'consultation_audio.webm');
+            }
+
+            fetch("{% url 'process_workspace' consultation.id %}", {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (data.transcript && (!finalTranscript || finalTranscript.length < 10)) {
+                        document.getElementById('stt-transcript').value = data.transcript;
+                    }
+
+                    Object.keys(data.documents).forEach(key => {
+                        documentsData[key] = {
+                            id: data.documents[key].id,
+                            content: data.documents[key].content,
+                            is_approved: data.documents[key].is_approved
+                        };
+                    });
+                    
+                    switchDocTab('SOAP');
+                    document.getElementById('stt-status').innerHTML = '<i class="fa-solid fa-circle-check text-success"></i> Clinical documentation generated successfully with Groq AI!';
+                    document.getElementById('mic-status-badge').innerHTML = '<i class="fa-solid fa-check text-success"></i> Complete';
+                } else {
+                    document.getElementById('stt-status').innerText = 'Failed to generate documents. Please try again.';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('stt-status').innerText = 'Server error during AI generation.';
+            });
+        }, 600);
+    }
+
+    function saveActiveDocument() {
+        const doc = documentsData[activeDocTab];
+        if (!doc.id) {
+            alert('Please generate documents first.');
+            return;
+        }
+        
+        const contentVal = document.getElementById('document-textarea').value;
+        const formData = new FormData();
+        formData.append('content', contentVal);
+        formData.append('approve', doc.is_approved ? 'true' : 'false');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch(`/consultations/document/${doc.id}/save/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                doc.content = contentVal;
+                alert(`${activeDocTab} document changes saved!`);
+            }
+        });
+    }
+
+    function approveActiveDocument() {
+        const doc = documentsData[activeDocTab];
+        if (!doc.id) {
+            alert('Please generate documents first.');
+            return;
+        }
+        
+        const contentVal = document.getElementById('document-textarea').value;
+        const formData = new FormData();
+        formData.append('content', contentVal);
+        formData.append('approve', 'true');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch(`/consultations/document/${doc.id}/save/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                doc.content = contentVal;
+                doc.is_approved = true;
+                switchDocTab(activeDocTab);
+                alert(`${activeDocTab} approved & finalized!`);
+            }
+        });
+    }
+
+    function exportActiveDoc(format) {
+        const doc = documentsData[activeDocTab];
+        if (!doc.id) {
+            alert('Please generate documents first.');
+            return;
+        }
+        window.location.href = `/consultations/document/${doc.id}/export/${format}/`;
+    }
+
+    function sendAssistantQuery() {
+        const queryVal = document.getElementById('chat-query').value.trim();
+        if (!queryVal) return;
+        
+        const container = document.getElementById('chat-conversation');
+        container.innerHTML += `<div class="chat-bubble doctor align-self-end">${queryVal}</div>`;
+        document.getElementById('chat-query').value = '';
+        container.scrollTop = container.scrollHeight;
+        
+        const formData = new FormData();
+        formData.append('query', queryVal);
+        formData.append('history', JSON.stringify([]));
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch("{% url 'chat_workspace' consultation.id %}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                container.innerHTML += `<div class="chat-bubble assistant align-self-start">${data.reply}</div>`;
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    }
+
+    // Doctor Synchronizer Polling Loop (fetches incoming Patient messages)
+    function pollDoctorSync() {
+        fetch(`/consultations/${consultationId}/sync/?last_id=${doctorLastMsgId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.messages && data.messages.length > 0) {
+                const transcriptArea = document.getElementById('stt-transcript');
+                let hasNew = false;
+                data.messages.forEach(msg => {
+                    if (msg.id > doctorLastMsgId) {
+                        doctorLastMsgId = msg.id;
+                        if (!msg.is_self) {
+                            const line = `${msg.speaker}: ${msg.text}`;
+                            if (transcriptArea.value.trim() === '') {
+                                transcriptArea.value = line;
+                                hasNew = true;
+                            } else {
+                                if (!transcriptArea.value.includes(msg.text)) {
+                                    transcriptArea.value += '\n\n' + line;
+                                    hasNew = true;
+                                }
+                            }
+                            triggerLiveSuggestions(msg.text);
+                        }
+                    }
+                });
+                if (hasNew) {
+                    transcriptArea.scrollTop = transcriptArea.scrollHeight;
+                    const statusSpan = document.getElementById('stt-status');
+                    if (statusSpan) {
+                        statusSpan.innerHTML = '<span class="text-teal-highlight fw-bold"><i class="fa-solid fa-bell"></i> Synchronized dialogue received from Patient!</span>';
+                    }
+                }
+            }
+        })
+        .catch(e => {});
+    }
+    setInterval(pollDoctorSync, 1500);
+
+    function showDocDef(type) {
+        const types = ['soap', 'clinical', 'rx', 'discharge', 'followup'];
+        types.forEach(t => {
+            const pill = document.getElementById(`def-pill-${t}`);
+            const content = document.getElementById(`def-content-${t}`);
+            if (t === type) {
+                if (pill) {
+                    pill.style.backgroundColor = '#078A83';
+                    pill.style.color = '#FFFFFF';
+                    pill.classList.remove('text-primary');
+                }
+                if (content) content.classList.remove('d-none');
+            } else {
+                if (pill) {
+                    pill.style.backgroundColor = 'transparent';
+                    pill.style.color = '';
+                    pill.classList.add('text-primary');
+                }
+                if (content) content.classList.add('d-none');
+            }
+        });
+    }
+</script>
+{% endblock %}

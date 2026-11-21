@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings — MediScribe{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 glass-sidebar p-3 d-flex flex-column justify-content-between d-none d-md-flex" style="background-color: #F4FAFA; border-right: 1px solid #67DDE0;">
+            <div>
+                <a class="brand-font d-flex align-items-center mb-4 text-decoration-none px-2" href="{% url 'dashboard' %}">
+                    <i class="fa-solid fa-notes-medical text-teal-highlight me-2 fs-4"></i>
+                    <span class="fw-bold fs-5" style="color: #07152D;">Medi<span class="text-teal-highlight">Scribe</span></span>
+                </a>
+                
+                <div class="d-flex flex-column gap-2">
+                    <a href="{% url 'dashboard' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D; background-color: #FFFFFF; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-chart-line me-2 text-teal-highlight"></i> Dashboard Home
+                    </a>
+                    
+                    <a href="{% url 'new_consultation' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-circle-plus me-2 text-teal-highlight"></i> New Consultation
+                    </a>
+                    
+                    <a href="{% url 'consultations_list' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-folder-open me-2 text-teal-highlight"></i> Consultation Records
+                    </a>
+                    
+                    <a href="{% url 'profile' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-user-md me-2 text-teal-highlight"></i> Profile Settings
+                    </a>
+                    
+                    <a href="{% url 'settings' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center text-white" style="background-color: #078A83; font-weight: 500;">
+                        <i class="fa-solid fa-gears me-2 text-white"></i> Settings
+                    </a>
+                </div>
+            </div>
+            
+            <div>
+                <a href="{% url 'logout' %}" class="btn w-100 py-2 rounded-3 fw-medium" style="background-color: #F4FAFA; color: #FF6B21; border: 1px solid #FF6B21;"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 offset-md-3 col-lg-10 offset-lg-2 p-4 p-md-5" style="background-color: #F4FAFA; min-height: 100vh;">
+            <h2 class="fw-bold mb-4" style="color: #07152D !important;">System Settings & AI Model Preferences</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert py-2 px-3 small mb-4 rounded-3" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #078A83;" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="card p-4 col-xl-8 bg-white rounded-4 shadow-sm" style="border: 1px solid #67DDE0;">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3 fw-bold" style="color: #07152D !important;">Model Selection</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="speech_model" class="form-label small fw-semibold" style="color: #07152D;">Speech Recognition Engine</label>
+                                <select name="speech_model" id="speech_model" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0; color: #07152D !important;">
+                                    <option value="whisper-1" {% if profile.speech_model == 'whisper-1' %}selected{% endif %}>Groq Whisper-large-v3 (Default & Recommended)</option>
+                                    <option value="gemini-audio" {% if profile.speech_model == 'gemini-audio' %}selected{% endif %}>Google Speech-to-Text</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="llm_model" class="form-label small fw-semibold" style="color: #07152D;">Generative AI LLM Model</label>
+                                <select name="llm_model" id="llm_model" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0; color: #07152D !important;">
+                                    <option value="openai/gpt-oss-120b" selected>Groq openai/gpt-oss-120b (Active Backend Model)</option>
+                                    <option value="llama-3.3-70b-versatile">Groq LLaMA 3.3 70B</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4" style="border-color: #67DDE0;">
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3 fw-bold" style="color: #07152D !important;">API Keys & Security</h5>
+                        <div class="mb-3">
+                            <label for="api_key_gemini" class="form-label small fw-semibold" style="color: #07152D;">Groq API Key (Managed securely via backend .env)</label>
+                            <input type="password" name="api_key_gemini" id="api_key_gemini" class="form-control" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #07152D;" value="••••••••••••••••••••••••" disabled>
+                            <span class="small mt-1 d-block" style="font-size: 11px; color: #07152D; opacity: 0.75;">API Keys are stored exclusively on the server in `.env` to prevent frontend leakage.</span>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4" style="border-color: #67DDE0;">
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3 fw-bold" style="color: #07152D !important;">Theme & Display Preferences</h5>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="theme_preference" id="theme_light" value="light" checked style="border-color: #078A83;">
+                                <label class="form-check-label" for="theme_light" style="color: #07152D; font-weight: 500;">Clinical Brand Theme (Teal / Cyan / Off-White / Navy / Coral)</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn action-btn-teal rounded-pill px-4 py-2 text-white fw-medium shadow-sm">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

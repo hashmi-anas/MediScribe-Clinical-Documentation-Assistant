@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Consultation Recording — MediScribe{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="glass-card p-4 p-md-5 mx-auto" style="max-width: 800px; background-color: #FFFFFF; border: 1px solid #67DDE0;">
+        <!-- Header details -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <span class="small uppercase" style="color: #07152D; opacity: 0.75; font-weight: 600;">CONSULTATION RECORDING WORKSPACE</span>
+                <h3 class="fw-bold mt-1" style="color: #07152D;">Patient: {{ consultation.patient.name }}</h3>
+                <p class="mb-0 small" style="color: #07152D; opacity: 0.85;">Department: {{ consultation.department }} | Visit: {{ consultation.visit_type }}</p>
+            </div>
+            <a href="{% url 'dashboard' %}" class="btn btn-sm" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #07152D;">Cancel</a>
+        </div>
+        
+        <hr class="mb-4" style="border-color: #67DDE0;">
+        
+        <!-- Live Waveform and Recorder Controls -->
+        <div class="text-center py-5 rounded-4 mb-4" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+            <div id="statusBadge" class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-4 rounded-pill" style="background-color: #FFFFFF; border: 1px solid #67DDE0; color: #07152D;">
+                <i class="fa-solid fa-microphone-slash text-teal-highlight"></i>
+                <span class="fw-semibold small">Microphone Idle</span>
+            </div>
+            
+            <!-- Pulse Microphone ring -->
+            <div class="mb-4 d-flex justify-content-center">
+                <button id="recordBtn" class="btn rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; background-color: #FFFFFF; border: 2px solid #078A83; color: #078A83; transition: all 0.3s ease;">
+                    <i class="fa-solid fa-microphone fs-2" id="recordIcon"></i>
+                </button>
+            </div>
+            
+            <h5 class="mb-2" id="instructionsText" style="color: #07152D; font-weight: 600;">Tap to start recording doctor-patient discussion</h5>
+            <p class="small mb-4" style="color: #07152D; opacity: 0.75;">Make sure you have authorized microphone access in your browser.</p>
+            
+            <!-- Waveform visualizer -->
+            <div class="waveform-container py-3 d-none" id="liveWaveform">
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 12px; animation-duration: 0.9s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 25px; animation-duration: 0.6s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 45px; animation-duration: 1.1s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 18px; animation-duration: 0.8s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 38px; animation-duration: 1.3s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 50px; animation-duration: 0.7s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 20px; animation-duration: 1.0s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 30px; animation-duration: 0.9s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 12px; animation-duration: 0.9s;"></div>
+                <div class="bar waveform-bar d-inline-block mx-1" style="height: 25px; animation-duration: 0.6s;"></div>
+            </div>
+        </div>
+        
+        <!-- Live Transcription simulation box -->
+        <div class="p-4 mb-4 rounded-4 d-none" id="transcriptionLogBox" style="background-color: #FFFFFF; border: 1px solid #67DDE0;">
+            <h6 class="text-teal-highlight mb-3"><i class="fa-solid fa-wave-pulse me-1"></i> Live Transcription feed</h6>
+            <div class="bg-transparent border-0 w-100 p-0" style="min-height: 100px; font-family: monospace; font-size: 14px; color: #07152D;" id="transcriptionFeed">
+                Initializing listener...
+            </div>
+        </div>
+        
+        <!-- Trigger AI generation button -->
+        <div id="aiActions" class="d-none">
+            <form method="POST" id="transcribeForm">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-started w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                    <i class="fa-solid fa-sparkles"></i> Process Transcript & Generate SOAP notes
+                </button>
+            </form>
+        </div>
+        
+        <!-- Or drag and drop file -->
+        <div id="fileUploadContainer" class="rounded-4 p-4 text-center cursor-pointer mt-3" style="background-color: #F4FAFA; border: 2px dashed #67DDE0;">
+            <i class="fa-solid fa-cloud-arrow-up text-teal-highlight fs-3 mb-2"></i>
+            <h6 class="mb-1" style="color: #07152D; font-weight: 600;">Alternative: Upload pre-recorded audio / video file</h6>
+            <p class="small mb-0" style="color: #07152D; opacity: 0.75;">Drag and drop MP3, WAV, or MP4 files here to transcribe.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const recordBtn = document.getElementById('recordBtn');
+        const recordIcon = document.getElementById('recordIcon');
+        const statusBadge = document.getElementById('statusBadge');
+        const instructionsText = document.getElementById('instructionsText');
+        const liveWaveform = document.getElementById('liveWaveform');
+        const transcriptionLogBox = document.getElementById('transcriptionLogBox');
+        const transcriptionFeed = document.getElementById('transcriptionFeed');
+        const aiActions = document.getElementById('aiActions');
+        const fileUploadContainer = document.getElementById('fileUploadContainer');
+        const transcribeForm = document.getElementById('transcribeForm');
+        
+        let isRecording = false;
+        
+        // Simulating transcription feed
+        const segments = [
+            "Doctor: Hello, welcome in. Please sit down. How is the knee feeling today?",
+            "Patient: Hi Doctor. It's been hurting badly on the inner side, especially when I try to squat or walk up stairs. I twisted it playing tennis last weekend.",
+            "Doctor: Understood. Let's perform a physical evaluation. I am conducting the McMurray test now...",
+            "Doctor: There is a notable joint effusion and a slight click on the medial joint line. I suspect a meniscus tear. We'll order an MRI."
+        ];
+        
+        let segmentIndex = 0;
+        let feedInterval;
+        
+        recordBtn.addEventListener('click', function() {
+            if (!isRecording) {
+                // Start Recording
+                isRecording = true;
+                recordBtn.style.backgroundColor = '#F4FAFA';
+                recordBtn.style.borderColor = '#FF6B21';
+                recordBtn.style.color = '#FF6B21';
+                recordIcon.className = 'fa-solid fa-stop fs-2';
+                
+                statusBadge.style.backgroundColor = '#F4FAFA';
+                statusBadge.style.borderColor = '#FF6B21';
+                statusBadge.style.color = '#FF6B21';
+                statusBadge.innerHTML = '<i class="fa-solid fa-circle-dot"></i> <span class="fw-semibold small">Recording Audio...</span>';
+                
+                instructionsText.innerText = 'Consultation dialogue is actively transcribing.';
+                liveWaveform.classList.remove('d-none');
+                transcriptionLogBox.classList.remove('d-none');
+                
+                transcriptionFeed.innerText = "";
+                segmentIndex = 0;
+                
+                feedInterval = setInterval(() => {
+                    if (segmentIndex < segments.length) {
+                        transcriptionFeed.innerHTML += `<p class="mb-2">${segments[segmentIndex]}</p>`;
+                        segmentIndex++;
+                    } else {
+                        clearInterval(feedInterval);
+                    }
+                }, 3000);
+                
+            } else {
+                // Stop Recording
+                isRecording = false;
+                recordBtn.style.backgroundColor = '#FFFFFF';
+                recordBtn.style.borderColor = '#078A83';
+                recordBtn.style.color = '#078A83';
+                recordIcon.className = 'fa-solid fa-microphone fs-2';
+                
+                statusBadge.style.backgroundColor = '#F4FAFA';
+                statusBadge.style.borderColor = '#078A83';
+                statusBadge.style.color = '#078A83';
+                statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span class="fw-semibold small">Audio Captured</span>';
+                
+                instructionsText.innerText = 'Dialogue capture completed. Ready for document parsing.';
+                liveWaveform.classList.add('d-none');
+                clearInterval(feedInterval);
+                
+                aiActions.classList.remove('d-none');
+                fileUploadContainer.classList.add('d-none');
+            }
+        });
+        
+        // Mock drag and drop file click
+        fileUploadContainer.addEventListener('click', function() {
+            alert('File selected! Simulating transcription feed...');
+            recordBtn.click();
+        });
+        
+        transcribeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Post transcription trigger to views
+            fetch(window.location.pathname, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = data.redirect_url;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

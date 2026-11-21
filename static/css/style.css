@@ -1,0 +1,228 @@
+/* MediScribe Premium CSS Stylesheet */
+/* Strict Light Palette: #078A83 (Teal) | #67DDE0 (Cyan) | #F4FAFA (Surface) | #FF6B21 (Orange) */
+
+html {
+    scroll-behavior: smooth;
+    background-color: #F4FAFA !important;
+}
+
+:root {
+    --primary: #078A83; /* Brand Primary Teal */
+    --primary-light: #67DDE0; /* Bright Cyan Highlight */
+    --accent-orange: #FF6B21; /* Vibrant Action Accent */
+    --bg-gradient: #F4FAFA; /* Soft Light Background */
+    --card-bg: #FFFFFF;
+    --card-border: #67DDE0;
+    --text-dark: #078A83; /* Clean Primary Teal - No Black */
+    --text-muted: #078A83;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #F4FAFA !important;
+    background: #F4FAFA !important;
+    color: #078A83 !important;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .brand-font {
+    font-family: 'Outfit', sans-serif;
+    color: #078A83 !important;
+}
+
+p, span, a, label, li, td, th {
+    color: #078A83;
+}
+
+/* Glassmorphism styling */
+.glass-card {
+    background: #FFFFFF !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid #67DDE0 !important;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(7, 138, 131, 0.08) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #078A83 !important;
+}
+
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(7, 138, 131, 0.16) !important;
+}
+
+.glass-sidebar {
+    background: #F4FAFA !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid #67DDE0 !important;
+    height: 100vh;
+    position: fixed;
+    z-index: 100;
+}
+
+/* Premium Buttons matching palette */
+.btn-started {
+    background: #FF6B21 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(255, 107, 33, 0.25);
+}
+
+.btn-started:hover {
+    background: #FF6B21 !important;
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 107, 33, 0.35);
+}
+
+.btn-trial {
+    background: #FF6B21 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    padding: 14px 32px;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(255, 107, 33, 0.25);
+}
+
+.btn-trial:hover {
+    background: #FF6B21 !important;
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 107, 33, 0.35);
+}
+
+/* Feature cards styling */
+.feature-card {
+    background: #FFFFFF !important;
+    border: 1px solid #67DDE0 !important;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(7, 138, 131, 0.08) !important;
+    color: #078A83 !important;
+}
+.feature-card h5 {
+    color: #078A83 !important;
+    font-weight: 700;
+}
+.feature-card p {
+    color: #078A83 !important;
+    opacity: 0.9;
+}
+
+.btn-login {
+    color: #078A83 !important;
+    border: 1px solid #078A83 !important;
+    background: #FFFFFF !important;
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    background: #F4FAFA !important;
+    border-color: #078A83 !important;
+    color: #078A83 !important;
+}
+
+/* Custom Waveform */
+.waveform-bar {
+    width: 3px;
+    height: 15px;
+    background-color: #078A83;
+    border-radius: 2px;
+    animation: bounce-wave 1.2s infinite ease-in-out;
+}
+
+@keyframes bounce-wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(3); }
+}
+
+.waveform-bar:nth-child(even) {
+    background-color: #67DDE0;
+    animation-delay: 0.15s;
+}
+
+/* Brand styling */
+.logo-heart {
+    background: linear-gradient(135deg, #078A83, #FF6B21);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Override Bootstrap Primary Colors with Brand Teal */
+.text-primary {
+    color: #078A83 !important;
+}
+.text-dark {
+    color: #078A83 !important;
+}
+.text-muted {
+    color: #078A83 !important;
+    opacity: 0.75 !important;
+}
+.btn-outline-primary {
+    border-color: #078A83 !important;
+    color: #078A83 !important;
+}
+.btn-outline-primary:hover, .btn-check:checked + .btn-outline-primary {
+    background-color: #078A83 !important;
+    border-color: #078A83 !important;
+    color: #FFFFFF !important;
+}
+.btn-primary {
+    background-color: #078A83 !important;
+    border-color: #078A83 !important;
+    color: #FFFFFF !important;
+}
+.btn-primary:hover {
+    background-color: #078A83 !important;
+    border-color: #078A83 !important;
+    opacity: 0.92;
+}
+a {
+    color: #078A83;
+}
+a:hover {
+    color: #FF6B21;
+}
+
+/* Contrast Utility Classes */
+.text-teal-highlight {
+    color: #078A83 !important;
+}
+.bg-teal-highlight {
+    background-color: #078A83 !important;
+    color: #FFFFFF !important;
+}
+.border-teal-highlight {
+    border-color: #078A83 !important;
+}
+.action-btn-teal {
+    background-color: #078A83 !important;
+    color: #FFFFFF !important;
+    border: none;
+    font-weight: 500;
+}
+.action-btn-teal:hover {
+    background-color: #078A83 !important;
+    opacity: 0.92;
+    color: #FFFFFF !important;
+}
+.bg-teal {
+    background-color: #F4FAFA !important;
+}
+.badge.bg-teal {
+    background-color: #F4FAFA !important;
+    color: #078A83 !important;
+    border: 1px solid #67DDE0 !important;
+    font-weight: 600;
+}

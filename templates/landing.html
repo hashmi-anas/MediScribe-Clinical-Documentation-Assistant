@@ -1,0 +1,499 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MediScribe — AI Clinical Documentation Assistant{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #F4FAFA !important;
+        color: #078A83 !important;
+    }
+    .bg-badge-teal {
+        background-color: #FFFFFF !important;
+        color: #078A83 !important;
+        border: 1px solid #67DDE0 !important;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .text-teal-highlight {
+        color: #078A83 !important;
+    }
+    .hero-title {
+        font-size: 3.5rem;
+        line-height: 1.15;
+        font-weight: 800;
+        color: #078A83 !important;
+    }
+    .hero-subtitle {
+        font-size: 1.15rem;
+        color: #078A83 !important;
+        opacity: 0.9;
+        max-width: 540px;
+    }
+    .hero-section {
+        background-image: url("{% static 'images/hero-bg.png' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        min-height: 600px;
+        background-color: #F4FAFA !important;
+    }
+    .hologram-stage {
+        position: relative;
+        height: 480px;
+    }
+    .floating-mockup-card {
+        position: absolute;
+        z-index: 20;
+        background: #FFFFFF !important;
+        border: 1px solid #67DDE0 !important;
+        border-radius: 12px;
+        padding: 12px 16px;
+        box-shadow: 0 10px 25px -5px rgba(7, 138, 131, 0.12) !important;
+        font-size: 13px;
+        width: 200px;
+        color: #078A83 !important;
+    }
+    .card-transcribe { top: 60px; left: 10px; }
+    .card-processing { bottom: 120px; left: 10px; }
+    .card-note { top: 60px; right: 10px; }
+    .card-prescription { bottom: 120px; right: 10px; }
+    
+    .hospital-logo-title {
+        font-size: 13px;
+        color: #078A83 !important;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .hospital-grid h5 {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        color: #078A83 !important;
+        font-size: 18px;
+    }
+    .feature-card {
+        background: #FFFFFF !important;
+        border: 1px solid #67DDE0 !important;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(7, 138, 131, 0.08) !important;
+        color: #078A83 !important;
+    }
+    .feature-card h5 {
+        color: #078A83 !important;
+        font-weight: 700;
+    }
+    .feature-card p {
+        color: #078A83 !important;
+        opacity: 0.9;
+    }
+    .feature-indicator {
+        width: 28px;
+        height: 3px;
+        background-color: #FF6B21 !important;
+        margin-top: 15px;
+        border-radius: 2px;
+    }
+    .glass-card {
+        background: #FFFFFF !important;
+        border: 1px solid #67DDE0 !important;
+        box-shadow: 0 8px 24px rgba(7, 138, 131, 0.08) !important;
+        color: #078A83 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg py-2.5" style="background-color: #FFFFFF !important; border-bottom: 1px solid #67DDE0; box-shadow: 0 2px 12px rgba(7, 138, 131, 0.08); position: sticky; top: 0; z-index: 1000;">
+    <div class="container">
+        <a class="navbar-brand brand-font d-flex align-items-center" href="#">
+            <div class="me-2 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 42px; height: 42px; border: 1px solid #67DDE0;">
+                <i class="fa-solid fa-heart-pulse logo-heart fs-4"></i>
+            </div>
+            <div class="d-flex flex-column">
+                <span class="fw-bold fs-4 mb-0 lh-1" style="color: #078A83 !important;">Medi<span style="color: #FF6B21;">Scribe</span></span>
+                <span style="font-size: 9px; font-weight: 600; letter-spacing: 0.3px; color: #078A83 !important;">AI Clinical Documentation Assistant</span>
+            </div>
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item"><a class="nav-link px-3 active fw-bold" href="#home" style="color: #078A83 !important; border-bottom: 2px solid #078A83;">Home</a></li>
+                <li class="nav-item"><a class="nav-link px-3 fw-semibold" href="#about" style="color: #078A83 !important;">About</a></li>
+                <li class="nav-item"><a class="nav-link px-3 fw-semibold" href="#features" style="color: #078A83 !important;">Features</a></li>
+                <li class="nav-item"><a class="nav-link px-3 fw-semibold" href="#contact" style="color: #078A83 !important;">Contact</a></li>
+            </ul>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="{% url 'login' %}" class="btn btn-login">Login</a>
+                <a href="{% url 'patient_login' %}" class="btn btn-started">Get Started</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section with exact custom background image -->
+<section id="home" class="hero-section py-5" style="background-color: #F4FAFA !important;">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <!-- Left Side Details -->
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 mb-4 rounded-pill bg-badge-teal shadow-sm">
+                    <i class="fa-solid fa-sparkles text-teal-highlight"></i>
+                    <span style="color: #078A83 !important;">AI-POWERED CLINICAL DOCUMENTATION</span>
+                </div>
+                
+                <h1 class="hero-title mb-4">
+                    AI That Listens.<br>
+                    AI That Understands.<br>
+                    AI That <span style="color: #FF6B21 !important;">Documents.</span>
+                </h1>
+                
+                <p class="hero-subtitle mb-4">
+                    Transform doctor-patient conversations into accurate clinical notes, prescriptions, summaries, and follow-up plans — in seconds.
+                </p>
+                
+                <!-- Action Buttons -->
+                <div class="d-flex align-items-center gap-4 flex-wrap mb-5">
+                    <a href="{% url 'patient_login' %}" class="btn btn-trial d-flex align-items-center gap-2">
+                        Start Free Trial <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                    
+                    <a href="#" class="d-flex align-items-center gap-2 text-decoration-none fw-bold py-2 px-3 rounded-pill" style="color: #078A83 !important; background-color: #FFFFFF; border: 1px solid #67DDE0;">
+                        <div class="d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 40px; height: 40px; border: 1px solid #67DDE0;">
+                            <i class="fa-solid fa-play" style="color: #FF6B21;"></i>
+                        </div>
+                        <div class="d-flex flex-column text-start">
+                            <span class="lh-1 mb-1" style="color: #078A83;">Watch Demo</span>
+                            <span class="small fw-normal" style="font-size: 11px; color: #078A83; opacity: 0.85;">See How It Works</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Live stats counter badge -->
+                <div class="row g-4 pt-2">
+                    <div class="col-4">
+                        <h4 class="fw-bold mb-0" style="color: #078A83 !important;">99.4%</h4>
+                        <span class="small" style="font-size: 12px; color: #078A83; opacity: 0.85;">Clinical Accuracy</span>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="fw-bold mb-0" style="color: #078A83 !important;">2.5 M+</h4>
+                        <span class="small" style="font-size: 12px; color: #078A83; opacity: 0.85;">Notes Generated</span>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="fw-bold mb-0" style="color: #078A83 !important;">15k+</h4>
+                        <span class="small" style="font-size: 12px; color: #078A83; opacity: 0.85;">Active Physicians</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side Interactive Hologram AI Simulation -->
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="hologram-stage d-flex align-items-center justify-content-center">
+                    <!-- Dynamic Pulse Central Heart -->
+                    <div class="text-center position-relative z-10">
+                        <div class="p-4 rounded-circle shadow-lg d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 140px; height: 140px; background-color: #FFFFFF; border: 2px solid #67DDE0;">
+                            <i class="fa-solid fa-heart-pulse text-teal-highlight" style="font-size: 65px; animation: pulse 1.8s infinite;"></i>
+                        </div>
+                        <span class="badge py-2 px-3 rounded-pill shadow-sm" style="background-color: #FFFFFF; color: #078A83; border: 1px solid #67DDE0;">Live Medical AI Node</span>
+                    </div>
+
+                    <!-- Floating Card 1: Ambient Transcription -->
+                    <div class="floating-mockup-card card-transcribe" data-aos="zoom-in" data-aos-delay="200">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="spinner-grow spinner-grow-sm" role="status" style="width: 8px; height: 8px; background-color: #FF6B21;"></span>
+                            <span class="fw-bold" style="font-size: 11px; color: #078A83;">Ambient Audio</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 my-2">
+                            <div class="waveform-bar"></div>
+                            <div class="waveform-bar"></div>
+                            <div class="waveform-bar"></div>
+                            <div class="waveform-bar"></div>
+                            <div class="waveform-bar"></div>
+                            <div class="waveform-bar"></div>
+                            <div class="waveform-bar"></div>
+                            <div class="waveform-bar"></div>
+                        </div>
+                        <span style="font-size: 10px; color: #078A83; opacity: 0.85;">"Patient reports 3-day history of chest tightness..."</span>
+                    </div>
+
+                    <!-- Floating Card 2: AI Processing -->
+                    <div class="floating-mockup-card card-processing" data-aos="zoom-in" data-aos-delay="300">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="fw-bold" style="font-size: 11px; color: #078A83;">AI Parsing Engine</span>
+                            <i class="fa-solid fa-brain text-teal-highlight"></i>
+                        </div>
+                        <div class="progress my-2" style="height: 6px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                            <div class="progress-bar bg-teal-highlight" role="progressbar" style="width: 85%"></div>
+                        </div>
+                        <span style="font-size: 10px; color: #078A83; opacity: 0.85;">ICD-10 / SNOMED CT Mapping</span>
+                    </div>
+
+                    <!-- Floating Card 3: SOAP Note Generated -->
+                    <div class="floating-mockup-card card-note" data-aos="zoom-in" data-aos-delay="400">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="fw-bold" style="font-size: 11px; color: #078A83;">SOAP Clinical Note</span>
+                            <i class="fa-solid fa-circle-check text-teal-highlight"></i>
+                        </div>
+                        <p class="mb-0" style="font-size: 10px; line-height: 1.2; color: #078A83; opacity: 0.85;"><strong>S:</strong> Chest discomfort on exertion.<br><strong>O:</strong> BP 138/88, HR 82bpm.<br><strong>A:</strong> Suspected Angina Pectoris.</p>
+                    </div>
+
+                    <!-- Floating Card 4: Prescription & Discharge -->
+                    <div class="floating-mockup-card card-prescription" data-aos="zoom-in" data-aos-delay="500">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="fw-bold" style="font-size: 11px; color: #078A83;">Prescription Drafted</span>
+                            <i class="fa-solid fa-prescription-bottle-medical text-teal-highlight"></i>
+                        </div>
+                        <p class="mb-0" style="font-size: 10px; line-height: 1.2; color: #078A83; opacity: 0.85;">Rx: Nitroglycerin 0.4mg SL prn.<br>Aspirin 81mg PO daily.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trusted Section matching logos row in picture -->
+<section class="py-5" style="background-color: #FFFFFF !important; border-top: 1px solid #67DDE0; border-bottom: 1px solid #67DDE0;">
+    <div class="container text-center">
+        <p class="hospital-logo-title text-uppercase font-semibold mb-4">Trusted by Healthcare Professionals & Leading Hospitals</p>
+        <div class="row align-items-center g-4 justify-content-center hospital-grid">
+            <div class="col-6 col-md-3 col-lg-2"><h5>Apollo Hospitals</h5></div>
+            <div class="col-6 col-md-3 col-lg-2"><h5>MAX Healthcare</h5></div>
+            <div class="col-6 col-md-3 col-lg-2"><h5>Manipal Hospitals</h5></div>
+            <div class="col-6 col-md-3 col-lg-2"><h5>Fortis Healthcare</h5></div>
+            <div class="col-6 col-md-3 col-lg-2"><h5>NH Narayana Health</h5></div>
+            <div class="col-6 col-md-3 col-lg-2"><h5>Columbia Asia</h5></div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section id="about" class="py-5" style="background-color: #F4FAFA !important; border-bottom: 1px solid #67DDE0;">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6" data-aos="fade-right">
+                <h2 class="display-6 fw-bold mb-3" style="color: #078A83 !important;">Empowering Physicians with Clinical AI</h2>
+                <div class="bg-teal-highlight mb-4" style="width: 60px; height: 3px; border-radius: 2px;"></div>
+                <p class="mb-4" style="color: #078A83; opacity: 0.9;">
+                    MediScribe is an enterprise-grade AI Clinical Documentation Workspace built specifically to reduce physician burnout and improve patient-doctor interaction. Our platform automatically converts natural patient discussions into structured medical documentation.
+                </p>
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle p-2" style="width: 40px; height: 40px; background-color: #FFFFFF; border: 1px solid #67DDE0;">
+                            <i class="fa-solid fa-user-doctor"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: #078A83;">Created for Doctors</h6>
+                            <p class="small mb-0" style="color: #078A83; opacity: 0.85;">Eliminate administrative tasks so you can focus entirely on patient care.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle p-2" style="width: 40px; height: 40px; background-color: #FFFFFF; border: 1px solid #67DDE0;">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: #078A83;">HIPAA & GDPR Compliance</h6>
+                            <p class="small mb-0" style="color: #078A83; opacity: 0.85;">All patient recording streams are fully encrypted with clinical data governance standards.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3" style="color: #078A83 !important;"><i class="fa-solid fa-chart-line text-teal-highlight me-2"></i> Operational Impact</h5>
+                    <p class="small mb-3" style="color: #078A83; opacity: 0.85;">Clinical metrics compiled from thousands of doctor consultation hours:</p>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                                <h3 class="fw-bold text-teal-highlight mb-1">70%</h3>
+                                <span class="small" style="color: #078A83; opacity: 0.9;">Less SOAP Notes Time</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                                <h3 class="fw-bold text-teal-highlight mb-1">3.5 Hrs</h3>
+                                <span class="small" style="color: #078A83; opacity: 0.9;">Saved Daily per Physician</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                                <h3 class="fw-bold text-teal-highlight mb-1">100%</h3>
+                                <span class="small" style="color: #078A83; opacity: 0.9;">Auto EHR Integration</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-3 text-center" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                                <h3 class="fw-bold text-teal-highlight mb-1">v1.5</h3>
+                                <span class="small" style="color: #078A83; opacity: 0.9;">Groq LLM & Whisper tuned</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Powerful AI Features grid section -->
+<section id="features" class="py-5" style="background-color: #FFFFFF !important; border-bottom: 1px solid #67DDE0;">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <h2 class="display-6 fw-bold mb-2" style="color: #078A83 !important;">Powerful AI Features</h2>
+            <div class="mx-auto bg-teal-highlight" style="width: 60px; height: 3px; border-radius: 2px;"></div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-md-4" data-aos="fade-up">
+                <div class="feature-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-microphone fs-5"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2" style="color: #078A83 !important;">Smart Transcription</h5>
+                    <p class="small" style="color: #078A83; opacity: 0.9;">Accurate speech-to-text with medical terminology optimization.</p>
+                    <div class="feature-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="col-md-4" data-aos="fade-up" data-delay="100">
+                <div class="feature-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-file-waveform fs-5"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2" style="color: #078A83 !important;">AI Clinical Notes</h5>
+                    <p class="small" style="color: #078A83; opacity: 0.9;">Generate structured clinical notes, SOAP notes, and summaries instantly.</p>
+                    <div class="feature-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="col-md-4" data-aos="fade-up" data-delay="200">
+                <div class="feature-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-prescription-bottle-medical fs-5"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2" style="color: #078A83 !important;">Prescription Assistant</h5>
+                    <p class="small" style="color: #078A83; opacity: 0.9;">AI-powered prescription drafting with dosage recommendations.</p>
+                    <div class="feature-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Feature 4 -->
+            <div class="col-md-4" data-aos="fade-up" data-delay="300">
+                <div class="feature-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-file-medical fs-5"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2" style="color: #078A83 !important;">Discharge Summaries</h5>
+                    <p class="small" style="color: #078A83; opacity: 0.9;">Create comprehensive discharge summaries in seconds.</p>
+                    <div class="feature-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Feature 5 -->
+            <div class="col-md-4" data-aos="fade-up" data-delay="400">
+                <div class="feature-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-chart-simple fs-5"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2" style="color: #078A83 !important;">Analytics Dashboard</h5>
+                    <p class="small" style="color: #078A83; opacity: 0.9;">Track productivity, usage, and patient outcomes with insights.</p>
+                    <div class="feature-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Feature 6 -->
+            <div class="col-md-4" data-aos="fade-up" data-delay="500">
+                <div class="feature-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-center text-teal-highlight rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-shield-check fs-5"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2" style="color: #078A83 !important;">Secure & Compliant</h5>
+                    <p class="small" style="color: #078A83; opacity: 0.9;">HIPAA compliant with enterprise-grade security and privacy.</p>
+                    <div class="feature-indicator"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="py-5" style="background-color: #F4FAFA !important; border-bottom: 1px solid #67DDE0;">
+    <div class="container text-center" data-aos="fade-up">
+        <h2 class="display-6 fw-bold mb-2" style="color: #078A83 !important;">Get In Touch</h2>
+        <div class="mx-auto bg-teal-highlight mb-4" style="width: 60px; height: 3px; border-radius: 2px;"></div>
+        <p class="small mb-4" style="color: #078A83; opacity: 0.9;">Have questions about HIPAA compliance or onboarding? Contact our support team.</p>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="glass-card p-4">
+                    <i class="fa-solid fa-envelope text-teal-highlight fs-4 mb-2"></i>
+                    <h6 class="fw-bold" style="color: #078A83;">Email Us</h6>
+                    <span class="small" style="color: #078A83; opacity: 0.85;">support@mediscribe.com</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card p-4">
+                    <i class="fa-solid fa-phone text-teal-highlight fs-4 mb-2"></i>
+                    <h6 class="fw-bold" style="color: #078A83;">Call Support</h6>
+                    <span class="small" style="color: #078A83; opacity: 0.85;">+1 (800) 555-0199</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-5" style="background-color: #FFFFFF !important; border-top: 1px solid #67DDE0;">
+    <div class="container">
+        <div class="row g-4 mb-4 text-start">
+            <div class="col-lg-4">
+                <a class="brand-font d-flex align-items-center mb-3 text-decoration-none" href="#">
+                    <div class="me-2 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 38px; height: 38px; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-heart-pulse logo-heart fs-5"></i>
+                    </div>
+                    <span class="fw-bold fs-5" style="color: #078A83 !important;">Medi<span style="color: #FF6B21;">Scribe</span></span>
+                </a>
+                <p class="small mb-3" style="color: #078A83; opacity: 0.9;">Transforming clinical documentation through secure, generative AI speech recognition pipelines.</p>
+                <span class="badge px-2.5 py-1.5" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #078A83;"><i class="fa-solid fa-shield-halved me-1"></i> HIPAA Compliant</span>
+            </div>
+            <div class="col-md-4 col-lg-3 offset-lg-1">
+                <h6 class="fw-bold mb-3" style="color: #078A83 !important;">Product Menu</h6>
+                <ul class="list-unstyled d-flex flex-column gap-2 small">
+                    <li><a href="#home" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Home Portal</a></li>
+                    <li><a href="#about" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">About Us</a></li>
+                    <li><a href="#features" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Core Features</a></li>
+                    <li><a href="#contact" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Contact Sales</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <h6 class="fw-bold mb-3" style="color: #078A83 !important;">Legal & Privacy</h6>
+                <ul class="list-unstyled d-flex flex-column gap-2 small">
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Privacy Policy</a></li>
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Terms of Service</a></li>
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">HIPAA Agreement</a></li>
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Security Measures</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <h6 class="fw-bold mb-3" style="color: #078A83 !important;">Support Center</h6>
+                <ul class="list-unstyled d-flex flex-column gap-2 small">
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Help Desk</a></li>
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Model Settings</a></li>
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">Developer API</a></li>
+                    <li><a href="#" class="text-decoration-none" style="color: #078A83; opacity: 0.9;">System Status</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="my-4" style="border-color: #67DDE0;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 small" style="color: #078A83; opacity: 0.9;">
+            <span>© 2026 MediScribe Inc. All rights reserved.</span>
+            <span>Designed for modern healthcare workflows.</span>
+        </div>
+    </div>
+</footer>
+{% endblock %}

@@ -1,0 +1,1140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Portal — MediScribe{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #F4FAFA !important;
+        color: #078A83;
+    }
+    .admin-sidebar {
+        background-color: #FFFFFF;
+        border-right: 1px solid #67DDE0;
+        min-height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 100;
+    }
+    .sidebar-link {
+        color: #078A83;
+        opacity: 0.9;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 10px 16px !important;
+        line-height: 1 !important;
+        cursor: pointer;
+    }
+    .sidebar-link i {
+        width: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .sidebar-link:hover {
+        background-color: #F4FAFA;
+        color: #078A83;
+        opacity: 1;
+    }
+    .sidebar-link.active {
+        background-color: #078A83 !important;
+        color: #FFFFFF !important;
+        opacity: 1;
+    }
+    .admin-topbar {
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #67DDE0;
+        padding: 12px 24px;
+        position: sticky;
+        top: 0;
+        z-index: 90;
+    }
+    .admin-card {
+        background-color: #FFFFFF;
+        border: 1px solid #67DDE0;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(7, 21, 45, 0.04);
+    }
+    .text-teal-highlight {
+        color: #078A83 !important;
+    }
+    .bg-teal-highlight {
+        background-color: #078A83 !important;
+    }
+    .action-btn-teal {
+        background-color: #078A83;
+        color: #FFFFFF !important;
+        border: none;
+        font-weight: 500;
+    }
+    .action-btn-teal:hover {
+        background-color: #078A83;
+        opacity: 0.92;
+        color: #FFFFFF !important;
+    }
+    .timeline-dot {
+        width: 12px;
+        height: 12px;
+        background-color: #078A83;
+        border-radius: 50%;
+        position: absolute;
+        left: -6px;
+        top: 5px;
+    }
+    .timeline-item {
+        position: relative;
+        border-left: 2px solid #67DDE0;
+        padding-left: 20px;
+        padding-bottom: 20px;
+    }
+    .timeline-item:last-child {
+        border-left: none;
+    }
+
+    /* Neat Clinical Report Template Styles */
+    .clinical-report-sheet {
+        background: #FFFFFF;
+        border: 1px solid #67DDE0;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(7, 21, 45, 0.05);
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .clinical-report-sheet:hover {
+        box-shadow: 0 8px 30px rgba(7, 138, 131, 0.12);
+    }
+    .clinical-report-header {
+        background: linear-gradient(135deg, #F4FAFA 0%, #E6F4F2 100%);
+        border-bottom: 1px solid #67DDE0;
+        padding: 16px 22px;
+    }
+    .clinical-metadata-bar {
+        background-color: #FFFFFF;
+        border-bottom: 1px dashed #67DDE0;
+        padding: 10px 22px;
+    }
+    .clinical-markdown-body {
+        padding: 24px;
+        font-size: 13.5px;
+        line-height: 1.7;
+        color: #07152D !important;
+    }
+    .clinical-markdown-body h1,
+    .clinical-markdown-body h2,
+    .clinical-markdown-body h3 {
+        color: #078A83 !important;
+        font-weight: 700;
+        font-size: 15px;
+        margin-top: 18px;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1.5px solid rgba(103, 221, 224, 0.4);
+    }
+    .clinical-markdown-body h4,
+    .clinical-markdown-body h5 {
+        color: #07152D !important;
+        font-weight: 700;
+        font-size: 13.5px;
+        margin-top: 14px;
+        margin-bottom: 6px;
+    }
+    .clinical-markdown-body p {
+        margin-bottom: 10px;
+        color: #07152D !important;
+    }
+    .clinical-markdown-body strong,
+    .clinical-markdown-body b {
+        color: #078A83 !important;
+        font-weight: 700;
+    }
+    .clinical-markdown-body ul,
+    .clinical-markdown-body ol {
+        padding-left: 22px;
+        margin-bottom: 12px;
+    }
+    .clinical-markdown-body li {
+        margin-bottom: 5px;
+        color: #07152D !important;
+    }
+    .clinical-markdown-body em,
+    .clinical-markdown-body blockquote {
+        background: #F4FAFA;
+        border-left: 3px solid #078A83;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-style: italic;
+        color: #078A83 !important;
+        display: block;
+        margin-top: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 admin-sidebar p-3 d-flex flex-column justify-content-between d-none d-md-flex">
+            <div>
+                <!-- Brand Logo -->
+                <div class="d-flex align-items-center mb-4 px-2">
+                    <div class="me-2 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 38px; height: 38px; border: 1px solid rgba(15, 118, 110, 0.1);">
+                        <i class="fa-solid fa-heart-pulse logo-heart fs-5"></i>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <span class="fw-bold fs-5 text-dark lh-1">Medi<span class="text-teal-highlight">Scribe</span></span>
+                        <span class="text-muted" style="font-size: 8px;">AI Clinical Documentation</span>
+                    </div>
+                </div>
+
+                <!-- Navigation List -->
+                <div class="d-flex flex-column gap-1">
+                    <div data-tab="tab-dashboard" class="sidebar-link active">
+                        <i class="fa-solid fa-chart-pie fs-5"></i> Dashboard
+                    </div>
+                    <div data-tab="tab-medical-records" class="sidebar-link">
+                        <i class="fa-solid fa-file-medical fs-5"></i> Medical Records
+                    </div>
+                    <div data-tab="tab-prescriptions" class="sidebar-link">
+                        <i class="fa-solid fa-prescription-bottle-medical fs-5"></i> Prescriptions
+                    </div>
+                    <div data-tab="tab-visits" class="sidebar-link">
+                        <i class="fa-solid fa-clock-rotate-left fs-5"></i> Visit History
+                    </div>
+                    <a href="{% url 'new_consultation' %}" class="sidebar-link text-decoration-none text-teal-highlight fw-bold" style="background-color: #E6F4F2;">
+                        <i class="fa-solid fa-headset fs-5"></i> Start Consultation
+                    </a>
+                    <div data-tab="tab-appointments" class="sidebar-link">
+                        <i class="fa-solid fa-calendar-check fs-5"></i> Appointments
+                    </div>
+
+                    <div data-tab="tab-notifications" class="sidebar-link">
+                        <i class="fa-solid fa-bell fs-5"></i> Notifications <span class="badge bg-danger small px-1.5 py-0.5 rounded-pill" style="font-size: 8px; vertical-align: middle; margin-left: 2px;">3</span>
+                    </div>
+                    <div data-tab="tab-profile" class="sidebar-link">
+                        <i class="fa-solid fa-user fs-5"></i> Profile
+                    </div>
+                    <div data-tab="tab-settings" class="sidebar-link">
+                        <i class="fa-solid fa-gears fs-5"></i> Settings
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Info + Logout -->
+            <div>
+                <div class="p-3 bg-light rounded-3 mb-2 border border-light-subtle text-center">
+                    <h6 class="fw-bold text-dark mb-1 small">{{ profile.name|default:request.user.get_full_name }}</h6>
+                    <span class="text-muted d-block" style="font-size: 9px;">Patient ID: PT-10023</span>
+                </div>
+                <a href="{% url 'logout' %}" class="sidebar-link text-danger hover-light text-decoration-none py-2">
+                    <i class="fa-solid fa-right-from-bracket fs-5"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="col-md-9 offset-md-3 col-lg-10 offset-lg-2 min-vh-100 d-flex flex-column">
+            <!-- Topbar Header -->
+            <div class="admin-topbar d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-light border-0 d-md-none"><i class="fa-solid fa-bars"></i></button>
+                    <div class="input-group" style="width: 320px; max-width: 100%;">
+                        <span class="input-group-text bg-light border-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" class="form-control bg-light border-0 text-dark small" placeholder="Search records, prescriptions, doctors...">
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Patient Notifications Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none p-0 position-relative" type="button" id="patientNotifBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-regular fa-bell fs-5 text-muted"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger p-1" style="font-size: 8px;">2</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end p-0 shadow-lg border border-light-subtle rounded-4" style="width: 310px; max-width: 90vw;" aria-labelledby="patientNotifBtn">
+                            <div class="p-3 border-bottom bg-light rounded-top-4">
+                                <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5"><i class="fa-solid fa-bell text-teal-highlight"></i> Patient Updates</h6>
+                            </div>
+                            <div class="d-flex flex-column divide-y">
+                                <a href="javascript:void(0)" onclick="switchTab('tab-prescriptions')" class="p-3 text-decoration-none text-dark d-flex gap-2.5 align-items-start hover-light border-bottom">
+                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center text-teal-highlight flex-shrink-0" style="width: 30px; height: 30px; background-color: #ccfbf1;">
+                                        <i class="fa-solid fa-prescription small"></i>
+                                    </div>
+                                    <div class="flex-grow-1" style="line-height: 1.3;">
+                                        <span class="d-block fw-bold small text-dark">Active Prescriptions</span>
+                                        <span class="text-muted" style="font-size: 11px;">Prescription records synced with your EHR chart.</span>
+                                    </div>
+                                </a>
+                                <a href="javascript:void(0)" onclick="switchTab('tab-appointments')" class="p-3 text-decoration-none text-dark d-flex gap-2.5 align-items-start hover-light">
+                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center text-primary flex-shrink-0" style="width: 30px; height: 30px; background-color: #e0f2fe;">
+                                        <i class="fa-solid fa-calendar-check small"></i>
+                                    </div>
+                                    <div class="flex-grow-1" style="line-height: 1.3;">
+                                        <span class="d-block fw-bold small text-dark">Upcoming Visit</span>
+                                        <span class="text-muted" style="font-size: 11px;">Next follow-up consultation scheduled.</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Menu -->
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none p-0" type="button" id="patientQuickBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-gear fs-5 text-muted hover-teal"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-light-subtle rounded-4 py-2" style="min-width: 190px;" aria-labelledby="patientQuickBtn">
+                            <li class="px-3 py-1 border-bottom mb-1">
+                                <span class="d-block fw-bold text-dark small">{{ profile.name|default:request.user.username }}</span>
+                                <span class="text-muted" style="font-size: 10.5px;">Patient Portal</span>
+                            </li>
+                            <li><button class="dropdown-item py-2 d-flex align-items-center gap-2 small text-dark" type="button" onclick="switchTab('tab-profile')"><i class="fa-solid fa-user text-muted"></i> My Medical Profile</button></li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 small text-danger" href="{% url 'logout' %}"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 border-start ps-3">
+                        <div class="d-flex flex-column text-end">
+                            <span class="fw-bold text-dark small mb-0">{{ profile.name|default:request.user.get_full_name }}</span>
+                            <span class="text-muted" style="font-size: 9px;">Patient</span>
+                        </div>
+                        <div class="bg-teal bg-opacity-15 rounded-circle d-flex align-items-center justify-content-center text-teal-highlight fw-bold" style="width: 36px; height: 36px; background-color: #e6f4f2;">
+                            <i class="fa-solid fa-user-injured"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Contents Container -->
+            <div class="p-4 flex-grow-1">
+
+                <!-- 1. DASHBOARD TAB -->
+                <div id="tab-dashboard" class="dashboard-tab-content">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <div>
+                            <span class="text-muted small">Welcome back,</span>
+                            <h3 class="fw-bold text-dark mb-1">{{ profile.name|default:request.user.get_full_name }} 👋</h3>
+                            <p class="text-muted small mb-0">Here's your health overview and live doctor consultation portal.</p>
+                        </div>
+                        <a href="{% url 'new_consultation' %}" class="btn action-btn-teal bg-teal-highlight px-4 py-2.5 rounded-pill shadow-sm text-decoration-none fw-bold d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-headset"></i> Start New Consultation
+                        </a>
+                    </div>
+
+                    <!-- Metrics Row -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="text-muted small">Next Appointment</span>
+                                    <h5 class="fw-bold text-dark mt-2 mb-0">24 May 2025</h5>
+                                    <span class="text-teal-highlight small d-block mb-2">10:30 AM</span>
+                                    <div class="d-flex align-items-center gap-2 pt-1 border-top">
+                                        <div class="bg-teal bg-opacity-10 text-teal-highlight rounded-circle d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background-color: #e6f4f2;">
+                                            <i class="fa-solid fa-user-md" style="font-size: 11px;"></i>
+                                        </div>
+                                        <div style="line-height: 1.1;">
+                                            <span class="d-block text-dark fw-bold" style="font-size: 10px;">Dr. Sarah Johnson</span>
+                                            <span class="text-muted" style="font-size: 8px;">Cardiologist</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="switchTab('tab-appointments')" class="btn btn-link text-teal-highlight text-decoration-none small p-0 mt-2 text-start">View Details <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="text-muted small">Active Prescriptions</span>
+                                    <h3 class="fw-bold text-dark mt-2 mb-0">2</h3>
+                                    <span class="text-muted small">View and manage your current medications</span>
+                                </div>
+                                <button onclick="switchTab('tab-prescriptions')" class="btn btn-link text-teal-highlight text-decoration-none small p-0 mt-2 text-start">View Prescriptions <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="text-muted small">Total Visits</span>
+                                    <h3 class="fw-bold text-dark mt-2 mb-0">{{ consultations.count|default:"7" }}</h3>
+                                    <span class="text-muted small">All time consultations with doctors</span>
+                                </div>
+                                <button onclick="switchTab('tab-visits')" class="btn btn-link text-teal-highlight text-decoration-none small p-0 mt-2 text-start">View History <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 h-100 bg-success bg-opacity-10 border-success border-opacity-10 d-flex flex-column justify-content-between" style="background-color: #eafaf1;">
+                                <div>
+                                    <span class="text-muted small">Health Summary</span>
+                                    <h3 class="fw-bold text-success mt-2 mb-0">Good</h3>
+                                    <span class="text-success small">Keep maintaining your healthy lifestyle!</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center rounded-circle bg-success text-white mt-2" style="width: 32px; height: 32px; align-self: flex-end;">
+                                    <i class="fa-solid fa-heart-pulse"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 1 Grid -->
+                    <div class="row g-4 mb-4">
+                        <!-- Recent Clinical Notes -->
+                        <div class="col-lg-5">
+                            <div class="admin-card p-4 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="fw-bold text-dark mb-0">Recent Clinical Notes</h5>
+                                        <button onclick="switchTab('tab-medical-records')" class="btn btn-link text-teal-highlight text-decoration-none small p-0">View All</button>
+                                    </div>
+                                    <div class="d-flex flex-column gap-3">
+                                        <div class="d-flex align-items-center justify-content-between border-bottom pb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fa-regular fa-file-lines text-teal-highlight fs-5"></i>
+                                                <div style="line-height: 1.2;">
+                                                    <span class="d-block text-dark fw-bold small">Follow-up Consultation</span>
+                                                    <span class="text-muted" style="font-size: 10px;">Dr. Sarah Johnson</span>
+                                                </div>
+                                            </div>
+                                            <span class="badge bg-success bg-opacity-10 text-success small px-2 py-0.5">Follow-up</span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between border-bottom pb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fa-regular fa-file-lines text-teal-highlight fs-5"></i>
+                                                <div style="line-height: 1.2;">
+                                                    <span class="d-block text-dark fw-bold small">Chest Pain Evaluation</span>
+                                                    <span class="text-muted" style="font-size: 10px;">Dr. Sarah Johnson</span>
+                                                </div>
+                                            </div>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary small px-2 py-0.5">Consultation</span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fa-regular fa-file-lines text-teal-highlight fs-5"></i>
+                                                <div style="line-height: 1.2;">
+                                                    <span class="d-block text-dark fw-bold small">Routine Checkup</span>
+                                                    <span class="text-muted" style="font-size: 10px;">Dr. Michael Brown</span>
+                                                </div>
+                                            </div>
+                                            <span class="badge bg-purple bg-opacity-10 text-purple small px-2 py-0.5" style="color: #a855f7;">Checkup</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="switchTab('tab-medical-records')" class="btn btn-link text-teal-highlight text-decoration-none small p-0 mt-3 text-center w-100 border-top pt-2">View All Clinical Notes <i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Latest Prescription -->
+                        <div class="col-lg-4">
+                            <div class="admin-card p-4 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="fw-bold text-dark mb-0">Latest Prescription</h5>
+                                        <button onclick="switchTab('tab-prescriptions')" class="btn btn-link text-teal-highlight text-decoration-none small p-0 fw-semibold">View All</button>
+                                    </div>
+                                    <div class="p-3 bg-light rounded-3 mb-3 border border-light-subtle">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted small">Prescribed on {{ latest_prescription.created_at|date:"d M Y"|default:"Today" }}</span>
+                                            <span class="badge {% if latest_prescription.is_approved %}bg-success bg-opacity-10 text-success{% else %}bg-teal bg-opacity-10 text-teal-highlight{% endif %}">
+                                                {% if latest_prescription.is_approved %}Active{% else %}Verified{% endif %}
+                                            </span>
+                                        </div>
+                                        {% if latest_prescription %}
+                                            <div class="small text-dark" style="white-space: pre-wrap; max-height: 110px; overflow-y: auto; line-height: 1.5;">{{ latest_prescription.content|truncatechars:180 }}</div>
+                                        {% else %}
+                                            <ul class="list-unstyled mb-0 small text-dark d-flex flex-column gap-2">
+                                                <li><i class="fa-solid fa-capsules text-teal-highlight me-1.5"></i> <strong>Atorvastatin 10mg</strong> - 1 tablet at night</li>
+                                                <li><i class="fa-solid fa-capsules text-teal-highlight me-1.5"></i> <strong>Amlodipine 5mg</strong> - 1 tablet in the morning</li>
+                                                <li><i class="fa-solid fa-capsules text-teal-highlight me-1.5"></i> <strong>Aspirin 75mg</strong> - 1 tablet after food</li>
+                                            </ul>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if latest_prescription %}
+                                    <a href="{% url 'export_document' latest_prescription.id 'pdf' %}" target="_blank" class="btn btn-sm rounded-pill w-100 py-2 text-white shadow-sm d-flex align-items-center justify-content-center gap-1.5 fw-medium text-decoration-none" style="background-color: #078A83 !important; color: #FFFFFF !important;">
+                                        <i class="fa-solid fa-download"></i> Download Prescription
+                                    </a>
+                                {% else %}
+                                    <button onclick="switchTab('tab-prescriptions')" class="btn btn-sm rounded-pill w-100 py-2 text-white shadow-sm d-flex align-items-center justify-content-center gap-1.5 fw-medium" style="background-color: #078A83 !important; color: #FFFFFF !important;">
+                                        <i class="fa-solid fa-download"></i> Download Prescription
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Appointment -->
+                        <div class="col-lg-3">
+                            <div class="admin-card p-4 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="fw-bold text-dark mb-0">Upcoming Appointment</h5>
+                                        <button onclick="switchTab('tab-appointments')" class="btn btn-link text-teal-highlight text-decoration-none small p-0">View Calendar</button>
+                                    </div>
+                                    <div class="text-center py-3 border border-dashed rounded-4 bg-light bg-opacity-50">
+                                        <div class="d-flex align-items-center justify-content-center bg-teal bg-opacity-15 text-teal-highlight rounded-circle mx-auto mb-2" style="width: 44px; height: 44px; background-color: #e6f4f2;">
+                                            <i class="fa-regular fa-calendar-check fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-1">24 May 2025</h6>
+                                        <p class="text-muted small mb-2">Saturday, 10:30 AM</p>
+                                        <span class="d-block text-dark fw-bold small">Dr. Sarah Johnson</span>
+                                        <span class="text-muted" style="font-size: 10px;">Cardiologist</span>
+                                        <span class="d-block text-muted mt-1" style="font-size: 9px;"><i class="fa-solid fa-location-dot text-teal-highlight"></i> MediScribe Cardiac Center</span>
+                                    </div>
+                                </div>
+                                <button onclick="switchTab('tab-appointments')" class="btn btn-teal-highlight bg-teal-highlight text-white w-100 py-2 mt-2 small rounded-pill">View Appointment Details</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 Grid -->
+                    <div class="row g-4 mb-4">
+                        <!-- Medical Timeline -->
+                        <div class="col-lg-5">
+                            <div class="admin-card p-4">
+                                <h5 class="fw-bold text-dark mb-3">Medical Timeline</h5>
+                                <div class="timeline-container mt-3">
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot"></div>
+                                        <span class="text-muted small">15 May 2025</span>
+                                        <h6 class="text-dark fw-bold mb-0">Follow-up Consultation</h6>
+                                        <span class="text-muted small">Dr. Sarah Johnson</span>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot"></div>
+                                        <span class="text-muted small">10 May 2025</span>
+                                        <h6 class="text-dark fw-bold mb-0">Chest Pain Evaluation</h6>
+                                        <span class="text-muted small">Dr. Sarah Johnson</span>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot"></div>
+                                        <span class="text-muted small">01 May 2025</span>
+                                        <h6 class="text-dark fw-bold mb-0">Routine Checkup</h6>
+                                        <span class="text-muted small">Dr. Michael Brown</span>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot"></div>
+                                        <span class="text-muted small">15 Apr 2025</span>
+                                        <h6 class="text-dark fw-bold mb-0">Blood Test Results</h6>
+                                        <span class="text-muted small">Dr. Michael Brown</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Health Tips for You -->
+                        <div class="col-lg-4">
+                            <div class="admin-card p-4 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-3">Health Tips for You</h5>
+                                    <div class="p-4 border border-dashed rounded-4 text-center bg-light">
+                                        <div class="d-flex align-items-center justify-content-center bg-success bg-opacity-15 text-success rounded-circle mx-auto mb-3" style="width: 50px; height: 50px; background-color: #d1fae5;">
+                                            <i class="fa-solid fa-leaf fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-2">Stay Active, Stay Healthy!</h6>
+                                        <p class="text-muted small mb-0">Regular exercise helps in maintaining heart health. Aim for 30 minutes of walking every day.</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-1.5 justify-content-center mt-3">
+                                    <span class="bg-teal bg-opacity-30 rounded-circle" style="width: 6px; height: 6px; background-color: #72a4a8;"></span>
+                                    <span class="bg-secondary bg-opacity-30 rounded-circle" style="width: 6px; height: 6px; background-color: #cbd5e1;"></span>
+                                    <span class="bg-secondary bg-opacity-30 rounded-circle" style="width: 6px; height: 6px; background-color: #cbd5e1;"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Notifications -->
+                        <div class="col-lg-3">
+                            <div class="admin-card p-4 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold text-dark mb-0">Recent Notifications</h5>
+                                    <button onclick="switchTab('tab-notifications')" class="btn btn-link text-teal-highlight text-decoration-none small p-0">View All</button>
+                                </div>
+                                <div class="d-flex flex-column gap-3 mt-3">
+                                    <div class="d-flex gap-2">
+                                        <div class="bg-teal bg-opacity-10 text-teal-highlight rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #e6f4f2; flex-shrink: 0;">
+                                            <i class="fa-regular fa-calendar-check" style="font-size: 11px;"></i>
+                                        </div>
+                                        <div style="line-height: 1.2;">
+                                            <span class="d-block text-dark small fw-bold">Appointment confirmed for 24 May</span>
+                                            <span class="text-muted" style="font-size: 9px;">2 hours ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #fef3c7; flex-shrink: 0;">
+                                            <i class="fa-solid fa-prescription-bottle-medical" style="font-size: 11px;"></i>
+                                        </div>
+                                        <div style="line-height: 1.2;">
+                                            <span class="d-block text-dark small fw-bold">New prescription added by Dr. Johnson</span>
+                                            <span class="text-muted" style="font-size: 9px;">1 day ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <div class="bg-purple bg-opacity-10 text-purple rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f3e8ff; color: #a855f7; flex-shrink: 0;">
+                                            <i class="fa-regular fa-file-lines" style="font-size: 11px;"></i>
+                                        </div>
+                                        <div style="line-height: 1.2;">
+                                            <span class="d-block text-dark small fw-bold">New clinical note is available for review</span>
+                                            <span class="text-muted" style="font-size: 9px;">2 days ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom AI Health Assistant chat component -->
+                    <div class="admin-card p-3 d-flex align-items-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-teal bg-opacity-15 rounded-circle d-flex align-items-center justify-content-center text-teal-highlight fw-bold" style="width: 44px; height: 44px; background-color: #e6f4f2; flex-shrink: 0;">
+                                <i class="fa-solid fa-robot fs-5"></i>
+                            </div>
+                            <div style="line-height: 1.2;">
+                                <h6 class="fw-bold text-dark mb-0">MediScribe AI Health Assistant</h6>
+                                <span class="text-muted small">Ask me anything about your health, medications, or reports.</span>
+                            </div>
+                        </div>
+                        <div class="input-group" style="width: 480px; max-width: 100%;">
+                            <input id="dashboard-chat-input" type="text" class="form-control border-light-subtle bg-light small text-dark bg-white" placeholder="Type your question here..." onkeydown="if(event.key==='Enter') startDashboardHealthChat()">
+                            <button onclick="startDashboardHealthChat()" class="btn btn-teal-highlight bg-teal-highlight text-white px-3"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. MEDICAL RECORDS TAB -->
+                <div id="tab-medical-records" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 pb-3 border-bottom" style="border-color: #67DDE0 !important;">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-file-medical text-teal-highlight me-2"></i> Clinical Visit Reports & Medical Summaries</h5>
+                                <p class="text-muted small mb-0">Official structured reports, diagnoses, and visit summaries compiled by your attending physicians.</p>
+                            </div>
+                            <span class="badge px-3 py-1.5 rounded-pill" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83; font-weight: 600;">{{ consultations.count }} Consultation Records</span>
+                        </div>
+
+                        <div class="d-flex flex-column gap-4">
+                            {% for consult in consultations %}
+                                {% if consult.documents.exists %}
+                                    <div class="clinical-report-sheet">
+                                        <!-- Clinical Report Header / Letterhead -->
+                                        <div class="clinical-report-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span class="badge px-2.5 py-1 rounded-pill" style="background-color: #078A83; color: #FFFFFF; font-size: 11px;">
+                                                        <i class="fa-solid fa-stethoscope me-1"></i> {{ consult.department }}
+                                                    </span>
+                                                    <h6 class="fw-bold text-dark mb-0 fs-6">{{ consult.department }} Consultation Summary</h6>
+                                                </div>
+                                                <span class="text-muted small" style="font-size: 11.5px;">
+                                                    <i class="fa-regular fa-calendar me-1"></i> {{ consult.created_at|date:"M d, Y" }} &bull; Provider: <strong>Dr. {{ consult.doctor.get_full_name|default:consult.doctor.username }}</strong>
+                                                </span>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-2">
+                                                {% if consult.status == 'COMPLETED' %}
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill small">
+                                                        <i class="fa-solid fa-check-circle me-1"></i> Completed & Verified
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-teal-highlight text-white px-2.5 py-1 rounded-pill small">
+                                                        <i class="fa-solid fa-circle-dot me-1"></i> {{ consult.status }}
+                                                    </span>
+                                                {% endif %}
+
+                                                {% for doc in consult.documents.all %}
+                                                    {% if forloop.first %}
+                                                        <a href="{% url 'export_document' doc.id 'pdf' %}" target="_blank" class="btn btn-sm action-btn-teal rounded-pill px-3 py-1 text-decoration-none shadow-sm fw-medium d-inline-flex align-items-center" style="font-size: 11.5px;">
+                                                            <i class="fa-solid fa-file-pdf me-1.5"></i> Download PDF
+                                                        </a>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Patient & Encounter Metadata Bar -->
+                                        <div class="clinical-metadata-bar">
+                                            <div class="row g-2 text-dark small" style="font-size: 11.5px;">
+                                                <div class="col-6 col-md-3">
+                                                    <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">PATIENT</span>
+                                                    <strong>{{ consult.patient.name }}</strong> ({{ consult.patient.gender }})
+                                                </div>
+                                                <div class="col-6 col-md-3">
+                                                    <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">MODE</span>
+                                                    <strong>{{ consult.visit_type }}</strong>
+                                                </div>
+                                                <div class="col-6 col-md-3">
+                                                    <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">LANGUAGE</span>
+                                                    <strong>{{ consult.language }}</strong>
+                                                </div>
+                                                <div class="col-6 col-md-3">
+                                                    <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">RECORD ID</span>
+                                                    <span class="badge bg-light text-dark border">MS-{{ consult.id|stringformat:"05d" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Report Documents Body -->
+                                        {% for doc in consult.documents.all %}
+                                            <div class="p-3 border-bottom bg-light bg-opacity-25 d-flex justify-content-between align-items-center">
+                                                <span class="fw-bold text-dark small"><i class="fa-solid fa-file-invoice text-teal-highlight me-1.5"></i> {{ doc.get_document_type_display }}</span>
+                                                <a href="{% url 'export_document' doc.id 'pdf' %}" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-0.5" style="font-size: 11px;">
+                                                    <i class="fa-solid fa-download me-1"></i> PDF
+                                                </a>
+                                            </div>
+                                            <div class="clinical-markdown-body" data-raw="{{ doc.content }}">{{ doc.content }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% empty %}
+                                <div class="text-center text-muted py-5 border border-dashed rounded-4 bg-light">
+                                    <i class="fa-solid fa-folder-open fs-2 text-teal-highlight mb-2"></i>
+                                    <h6 class="fw-bold text-dark mb-1">No Clinical Reports Available Yet</h6>
+                                    <p class="small mb-0">Your consultation summaries and medical reports will be archived here.</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PRESCRIPTIONS TAB -->
+                <div id="tab-prescriptions" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 pb-3 border-bottom" style="border-color: #67DDE0 !important;">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-prescription-bottle-medical text-teal-highlight me-2"></i> Enrolled Medical Prescriptions</h5>
+                                <p class="text-muted small mb-0">Official pharmaceutical prescriptions and dosage directives authorized by your healthcare provider.</p>
+                            </div>
+                            <span class="badge px-3 py-1.5 rounded-pill" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #078A83; font-weight: 600;">{{ prescriptions.count }} Prescriptions</span>
+                        </div>
+                        
+                        <div class="d-flex flex-column gap-4">
+                            {% for rx in prescriptions %}
+                                <div class="clinical-report-sheet">
+                                    <div class="clinical-report-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="badge px-2.5 py-1 rounded-pill" style="background-color: #078A83; color: #FFFFFF; font-size: 11px;">
+                                                    <i class="fa-solid fa-pills me-1"></i> Rx Prescription
+                                                </span>
+                                                <h6 class="fw-bold text-dark mb-0 fs-6">{{ rx.consultation.department }} Prescription</h6>
+                                            </div>
+                                            <span class="text-muted small" style="font-size: 11.5px;">
+                                                <i class="fa-regular fa-calendar me-1"></i> Prescribed on {{ rx.created_at|date:"M d, Y" }} &bull; Provider: <strong>Dr. {{ rx.consultation.doctor.get_full_name|default:rx.consultation.doctor.username }}</strong>
+                                            </span>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if rx.is_approved %}
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill small">
+                                                    <i class="fa-solid fa-circle-check me-1"></i> Approved & Finalized
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill small">
+                                                    <i class="fa-solid fa-clock me-1"></i> Draft Pending Approval
+                                                </span>
+                                            {% endif %}
+                                            <a href="{% url 'export_document' rx.id 'pdf' %}" target="_blank" class="btn btn-sm action-btn-teal rounded-pill px-3 py-1 text-decoration-none shadow-sm fw-medium d-inline-flex align-items-center" style="font-size: 11.5px;">
+                                                <i class="fa-solid fa-download me-1.5"></i> Download PDF
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div class="clinical-metadata-bar">
+                                        <div class="row g-2 text-dark small" style="font-size: 11.5px;">
+                                            <div class="col-6 col-md-3">
+                                                <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">PATIENT</span>
+                                                <strong>{{ rx.consultation.patient.name }}</strong>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">DEPARTMENT</span>
+                                                <strong>{{ rx.consultation.department }}</strong>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">STATUS</span>
+                                                <strong>{% if rx.is_approved %}Active Prescription{% else %}Pending Doctor Review{% endif %}</strong>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">PRESCRIPTION ID</span>
+                                                <span class="badge bg-light text-dark border">RX-{{ rx.id|stringformat:"05d" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="clinical-markdown-body" data-raw="{{ rx.content }}">{{ rx.content }}</div>
+                                </div>
+                            {% empty %}
+                                <div class="text-center text-muted py-5 border border-dashed rounded-4 bg-light">
+                                    <i class="fa-solid fa-prescription-bottle-medical fs-2 text-teal-highlight mb-2"></i>
+                                    <h6 class="fw-bold text-dark mb-1">No Prescriptions on File</h6>
+                                    <p class="small mb-0">Authorized medications and dosage orders will appear here after your doctor's consultation.</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. VISIT HISTORY TAB -->
+                <div id="tab-visits" class="dashboard-tab-content d-none">
+                    <!-- Clinical Documentation Standards & Types Reference Box -->
+                    <div class="admin-card p-4 mb-4" style="background: linear-gradient(135deg, #FFFFFF 0%, #F4FAFA 100%); border: 1px solid #67DDE0;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div>
+                                <h6 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-book-medical text-teal-highlight me-1.5"></i> Medical Documentation Types & Guide</h6>
+                                <p class="text-muted small mb-0">Understand the different clinical notes and reports generated by your doctor during consultations.</p>
+                            </div>
+                            
+                            <!-- Exact Pill Container matching user image -->
+                            <div class="d-inline-flex p-1 rounded-pill" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                                <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold pat-def-pill active" id="pat-pill-soap" onclick="switchPatDocDef('soap')" style="background-color: #078A83; color: #FFFFFF; font-size: 12px; border: none;">SOAP</button>
+                                <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold pat-def-pill text-primary" id="pat-pill-clinical" onclick="switchPatDocDef('clinical')" style="font-size: 12px; border: none; background: transparent;">Clinical</button>
+                                <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold pat-def-pill text-primary" id="pat-pill-rx" onclick="switchPatDocDef('rx')" style="font-size: 12px; border: none; background: transparent;">Rx</button>
+                                <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold pat-def-pill text-primary" id="pat-pill-discharge" onclick="switchPatDocDef('discharge')" style="font-size: 12px; border: none; background: transparent;">Discharge</button>
+                                <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold pat-def-pill text-primary" id="pat-pill-followup" onclick="switchPatDocDef('followup')" style="font-size: 12px; border: none; background: transparent;">Follow-up</button>
+                            </div>
+                        </div>
+
+                        <!-- Definition Display Card Grid -->
+                        <div class="row g-2">
+                            <div class="col-md-12">
+                                <div id="pat-def-card" class="p-3 rounded-3" style="background-color: #FFFFFF; border: 1px solid #67DDE0; box-shadow: 0 2px 6px rgba(7, 138, 131, 0.05);">
+                                    <div id="pat-content-soap" class="pat-def-view">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <span class="badge px-2.5 py-1 rounded-pill" style="background-color: #078A83; color: #FFFFFF;">SOAP Note</span>
+                                            <span class="fw-bold text-dark small">Subjective, Objective, Assessment, and Plan Summary</span>
+                                        </div>
+                                        <div class="row g-2 small text-muted">
+                                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Subjective (S):</strong> Your symptoms, feelings & reasons for the visit.</div>
+                                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Objective (O):</strong> Physical vitals, lab reports & examination findings.</div>
+                                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Assessment (A):</strong> The doctor's diagnosis and medical assessment.</div>
+                                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Plan (P):</strong> Prescriptions, tests, treatment steps & health advice.</div>
+                                        </div>
+                                    </div>
+
+                                    <div id="pat-content-clinical" class="pat-def-view d-none">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Clinical Note</span>
+                                            <span class="fw-bold text-dark small">Complete Visit Record</span>
+                                        </div>
+                                        <p class="small text-muted mb-0">Detailed notes written by your physician summarizing your symptoms, examination observations, medical history review, and expert clinical conclusions.</p>
+                                    </div>
+
+                                    <div id="pat-content-rx" class="pat-def-view d-none">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Rx (Prescription)</span>
+                                            <span class="fw-bold text-dark small">Official Doctor's Prescription</span>
+                                        </div>
+                                        <p class="small text-muted mb-0">The authorized medical prescription stating exact medication names, doses, timing (morning/night), duration, food instructions, and refill allowances.</p>
+                                    </div>
+
+                                    <div id="pat-content-discharge" class="pat-def-view d-none">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Discharge Summary</span>
+                                            <span class="fw-bold text-dark small">Visit & Treatment Summary</span>
+                                        </div>
+                                        <p class="small text-muted mb-0">A complete summary of your hospital or clinic visit, treatments given, condition upon discharge, home medications, and self-care recommendations.</p>
+                                    </div>
+
+                                    <div id="pat-content-followup" class="pat-def-view d-none">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Follow-up Plan</span>
+                                            <span class="fw-bold text-dark small">Next Steps & Care Schedule</span>
+                                        </div>
+                                        <p class="small text-muted mb-0">Schedule of your upcoming doctor appointments, required follow-up blood/lab tests, lifestyle recovery guidance, and red-flag symptoms to watch out for.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-clock-rotate-left text-teal-highlight me-2"></i> Consultation Visit History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover text-start align-middle small">
+                                <thead class="bg-light">
+                                    <tr class="text-muted">
+                                        <th>Date</th>
+                                        <th>Department</th>
+                                        <th>Doctor</th>
+                                        <th class="text-end">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for consult in consultations %}
+                                        <tr>
+                                            <td>{{ consult.created_at|date:"M d, Y" }}</td>
+                                            <td class="fw-bold">{{ consult.department }}</td>
+                                            <td>Dr. {{ consult.doctor.first_name }} {{ consult.doctor.last_name }}</td>
+                                            <td class="text-end">
+                                                <span class="badge {% if consult.status == 'COMPLETED' %}bg-success text-white{% else %}bg-teal-highlight text-white{% endif %}">
+                                                    {{ consult.status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No past visits recorded.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. APPOINTMENTS TAB -->
+                <div id="tab-appointments" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-calendar-check text-teal-highlight me-2"></i> Appointment Scheduler</h5>
+                        
+                        <!-- Active Appointment Card -->
+                        <div class="border rounded-4 p-4 bg-light mb-4 text-start">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock text-teal-highlight me-1"></i> Upcoming Consultation</h6>
+                                <span class="badge bg-success bg-opacity-10 text-success">Confirmed</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-4">
+                                    <span class="text-muted d-block small mb-1" style="font-size: 10px;">DATE & TIME</span>
+                                    <span class="fw-bold text-dark fs-6">24 May 2025 at 10:30 AM</span>
+                                </div>
+                                <div class="col-sm-4">
+                                    <span class="text-muted d-block small mb-1" style="font-size: 10px;">PHYSICIAN</span>
+                                    <span class="fw-bold text-dark fs-6 d-block">Dr. Sarah Johnson</span>
+                                    <span class="text-muted small" style="font-size: 10px;">Cardiologist</span>
+                                </div>
+                                <div class="col-sm-4">
+                                    <span class="text-muted d-block small mb-1" style="font-size: 10px;">DEPARTMENT</span>
+                                    <span class="fw-bold text-dark fs-6">Cardiology Clinic</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border border-dashed rounded-4 p-4 text-center bg-white">
+                            <i class="fa-solid fa-calendar-days fs-4 mb-2 text-teal-highlight"></i>
+                            <h6 class="fw-bold text-dark mb-1">EHR Scheduler Connected</h6>
+                            <p class="text-muted small mb-0">Consultations integrated from hospital EHR provider scheduler.</p>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- 7. NOTIFICATIONS TAB -->
+                <div id="tab-notifications" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-bell text-teal-highlight me-2"></i> All Notifications</h5>
+                        <ul class="list-group list-group-flush small">
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                <span>Appointment confirmed for 24 May 2025 at 10:30 AM</span>
+                                <span class="text-muted">2 hours ago</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                <span>New prescription issued by Dr. Sarah Johnson</span>
+                                <span class="text-muted">1 day ago</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 8. PROFILE TAB -->
+                <div id="tab-profile" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-user text-teal-highlight me-2"></i> Patient Profile</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Date of Birth</label>
+                                <input type="text" class="form-control bg-light border-0" value="{{ profile.date_of_birth|default:'1990-01-01' }}" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Gender</label>
+                                <input type="text" class="form-control bg-light border-0" value="{{ profile.gender|default:'Male' }}" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Blood Group</label>
+                                <input type="text" class="form-control bg-light border-0" value="{{ profile.blood_group|default:'O+' }}" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Allergies</label>
+                                <input type="text" class="form-control bg-light border-0" value="{{ profile.allergies|default:'No known allergies' }}" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. SETTINGS TAB -->
+                <div id="tab-settings" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-gears text-teal-highlight me-2"></i> Settings</h5>
+                        <p class="text-muted small">Manage portal preferences, privacy options, and security access logs.</p>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="notifSwitch" checked>
+                            <label class="form-check-label text-dark small" for="notifSwitch">Receive Email Notifications</label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global function to switch tabs
+    function switchTab(tabId) {
+        // Toggle active class on sidebar links
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            if (link.getAttribute('data-tab') === tabId) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+        
+        // Hide all tabs
+        document.querySelectorAll('.dashboard-tab-content').forEach(content => {
+            content.classList.add('d-none');
+        });
+        
+        // Show specified tab
+        const activeContent = document.getElementById(tabId);
+        if (activeContent) {
+            activeContent.classList.remove('d-none');
+            setTimeout(renderAllClinicalMarkdown, 50);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Add click listener to all sidebar tab switchers
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                if (targetTab) {
+                    switchTab(targetTab);
+                }
+            });
+        });
+
+        // Automatically format all clinical reports and prescriptions in neat template format
+        renderAllClinicalMarkdown();
+    });
+
+    function renderAllClinicalMarkdown() {
+        document.querySelectorAll('.clinical-markdown-body').forEach(el => {
+            const raw = el.getAttribute('data-raw') || el.innerText;
+            if (raw) {
+                try {
+                    if (typeof marked !== 'undefined' && marked.parse) {
+                        el.innerHTML = marked.parse(raw);
+                    } else {
+                        el.innerHTML = simpleFormatMarkdown(raw);
+                    }
+                } catch(e) {
+                    el.innerHTML = simpleFormatMarkdown(raw);
+                }
+            }
+        });
+    }
+
+    function simpleFormatMarkdown(text) {
+        if (!text) return '';
+        return text
+            .replace(/### (.*?)(?:\n|$)/g, '<h3>$1</h3>')
+            .replace(/#### (.*?)(?:\n|$)/g, '<h4>$1</h4>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/^- (.*?)$/gm, '<li>$1</li>')
+            .replace(/^\d+\.\s+(.*?)$/gm, '<li>$1</li>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function sendPatientChat() {
+        const input = document.getElementById('patient-chat-input');
+        const query = input.value.trim();
+        if (!query) return;
+        
+        const box = document.getElementById('patient-chat-box');
+        // Add user bubble
+        box.innerHTML += `
+            <div class="d-flex gap-3 mb-3 justify-content-end">
+                <div class="p-3 rounded-4 bg-light border border-light-subtle text-dark small" style="max-width: 80%;">
+                    <span>${query}</span>
+                </div>
+            </div>
+        `;
+        input.value = '';
+        box.scrollTop = box.scrollHeight;
+        
+        // Fetch response from assistant api
+        fetch("{% url 'api_assistant' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            body: JSON.stringify({ query: query })
+        })
+        .then(res => res.json())
+        .then(data => {
+            box.innerHTML += `
+                <div class="d-flex gap-3 mb-3">
+                    <div class="bg-teal bg-opacity-10 text-teal-highlight rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #e6f4f2; flex-shrink: 0;">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="p-3 rounded-4 bg-white border border-light-subtle text-dark small" style="max-width: 80%;">
+                        <span>${data.reply || 'No response.'}</span>
+                    </div>
+                </div>
+            `;
+            box.scrollTop = box.scrollHeight;
+        });
+    }
+
+    function startDashboardHealthChat() {
+        const query = document.getElementById('dashboard-chat-input').value.trim();
+        if (!query) return;
+        
+        document.getElementById('dashboard-chat-input').value = '';
+        const widgetContainer = document.getElementById('global-ai-container');
+        if (widgetContainer && widgetContainer.classList.contains('d-none')) {
+            widgetContainer.classList.remove('d-none');
+        }
+        document.getElementById('global-ai-input').value = query;
+        sendGlobalChat();
+    }
+
+    function switchPatDocDef(type) {
+        const types = ['soap', 'clinical', 'rx', 'discharge', 'followup'];
+        types.forEach(t => {
+            const pill = document.getElementById(`pat-pill-${t}`);
+            const content = document.getElementById(`pat-content-${t}`);
+            if (t === type) {
+                if (pill) {
+                    pill.style.backgroundColor = '#078A83';
+                    pill.style.color = '#FFFFFF';
+                    pill.classList.remove('text-primary');
+                }
+                if (content) content.classList.remove('d-none');
+            } else {
+                if (pill) {
+                    pill.style.backgroundColor = 'transparent';
+                    pill.style.color = '';
+                    pill.classList.add('text-primary');
+                }
+                if (content) content.classList.add('d-none');
+            }
+        });
+    }
+</script>
+{% endblock %}
+

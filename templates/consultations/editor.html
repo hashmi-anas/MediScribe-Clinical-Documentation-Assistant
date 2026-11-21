@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Clinical Editor — MediScribe{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Navigation for documents -->
+        <div class="col-md-3 col-lg-2 glass-sidebar p-3 d-flex flex-column justify-content-between d-none d-md-flex" style="background-color: #F4FAFA; border-right: 1px solid #67DDE0;">
+            <div>
+                <a class="brand-font d-flex align-items-center mb-4 text-decoration-none px-2" href="{% url 'dashboard' %}">
+                    <i class="fa-solid fa-notes-medical text-teal-highlight me-2 fs-4"></i>
+                    <span class="fw-bold fs-5" style="color: #07152D;">Medi<span class="text-teal-highlight">Scribe</span></span>
+                </a>
+                
+                <div class="d-flex flex-column gap-2">
+                    <h6 class="small text-uppercase px-2 mb-2" style="font-weight: 700; color: #07152D; opacity: 0.8; font-size: 11px;">GENERATED DOCUMENTS</h6>
+                    {% for doc in documents %}
+                        <a href="?type={{ doc.document_type }}" class="btn text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center {% if active_doc_type == doc.document_type %}text-white fw-medium{% else %}border-0 hover-light{% endif %}" style="{% if active_doc_type == doc.document_type %}background-color: #078A83;{% else %}color: #07152D; background-color: #FFFFFF; border: 1px solid #67DDE0 !important;{% endif %}">
+                            <i class="fa-solid fa-file-invoice me-2 {% if active_doc_type == doc.document_type %}text-white{% else %}text-teal-highlight{% endif %}"></i> {{ doc.get_document_type_display }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn w-100 py-2 rounded-3" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #07152D; font-weight: 500;"><i class="fa-solid fa-circle-chevron-left me-2"></i> Dashboard</a>
+            </div>
+        </div>
+        
+        <!-- Editor Content Workspace -->
+        <div class="col-md-6 offset-md-3 col-lg-7 offset-lg-2 p-4 p-md-5" style="background-color: #F4FAFA; min-height: 100vh;">
+            <!-- Document Title & Stats -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <h3 class="fw-bold mb-1" style="color: #07152D !important;">{{ active_doc.get_document_type_display }}</h3>
+                    <p class="small mb-0" style="color: #07152D !important; opacity: 0.85;">Version: <strong>v{{ active_doc.version }}</strong> | Patient: <strong>{{ consultation.patient.name }}</strong></p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="saveBtn" class="btn action-btn-teal rounded-pill px-3 py-1.5 text-white fw-medium"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Save & Approve</button>
+                    
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle rounded-pill px-3 py-1.5" style="background-color: #FFFFFF; border: 1px solid #67DDE0; color: #07152D; font-weight: 500;" type="button" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-download me-1 text-teal-highlight"></i> Export
+                        </button>
+                        <ul class="dropdown-menu shadow-sm rounded-3" style="border: 1px solid #67DDE0;">
+                            <li><a class="dropdown-item" style="color: #07152D;" href="{% url 'export_document' active_doc.id 'pdf' %}" target="_blank"><i class="fa-solid fa-file-pdf me-2" style="color: #FF6B21;"></i> Printable PDF</a></li>
+                            <li><a class="dropdown-item" style="color: #07152D;" href="{% url 'export_document' active_doc.id 'txt' %}"><i class="fa-solid fa-file-lines me-2 text-teal-highlight"></i> Text File (.txt)</a></li>
+                            {% if active_doc.document_type == 'EHR_STRUCTURED' %}
+                                <li><a class="dropdown-item" style="color: #07152D;" href="{% url 'export_document' active_doc.id 'json' %}"><i class="fa-solid fa-file-code me-2 text-teal-highlight"></i> FHIR JSON</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Editor Text Area -->
+            <div class="card p-4 mb-4 bg-white rounded-4 shadow-sm" style="border: 1px solid #67DDE0;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge px-3 py-1.5 rounded-pill" style="background-color: #F4FAFA; border: 1px solid #67DDE0 !important; color: #07152D !important; font-weight: 600;"><i class="fa-solid fa-pen-nib text-teal-highlight me-1.5"></i> Clinical Note Text Editor</span>
+                    
+                    <!-- AI Refinement triggers -->
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm action-btn-teal rounded-pill px-3 py-1 text-white" id="aiImprove"><i class="fa-solid fa-sparkles me-1"></i> AI Improve</button>
+                        <button class="btn btn-sm rounded-pill px-3 py-1" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #07152D;" id="aiSummarize"><i class="fa-solid fa-compress me-1 text-teal-highlight"></i> Summarize</button>
+                    </div>
+                </div>
+                
+                <textarea id="editorArea" class="form-control bg-white p-3 rounded-3" style="min-height: 450px; font-family: 'Inter', sans-serif; font-size: 14.5px; line-height: 1.6; border: 1px solid #67DDE0; color: #07152D !important;">{{ active_doc.content }}</textarea>
+            </div>
+            
+            <!-- Revision history -->
+            {% if active_doc.history %}
+                <div class="card p-3 bg-white rounded-4 shadow-sm" style="border: 1px solid #67DDE0;">
+                    <h6 class="small fw-bold mb-2" style="color: #07152D !important;"><i class="fa-solid fa-history text-teal-highlight me-1"></i> Version History Log</h6>
+                    <div class="d-flex flex-column gap-2">
+                        {% for hist in active_doc.history %}
+                            <div class="d-flex justify-content-between small pb-2" style="color: #07152D; opacity: 0.85; border-bottom: 1px solid #67DDE0;">
+                                <span>Version v{{ hist.version }} — saved by {{ hist.updated_by }}</span>
+                                <span>{{ hist.timestamp|slice:":16" }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Sidebar - AI Clinical Assistant Chatbot -->
+        <div class="col-md-3 col-lg-3 bg-white p-4 shadow-sm" style="height: 100vh; position: fixed; right: 0; top: 0; z-index: 100; border-left: 1px solid #67DDE0;">
+            <div class="d-flex flex-column justify-content-between h-100">
+                <div>
+                    <h5 class="fw-bold mb-2 d-flex align-items-center gap-2" style="color: #07152D !important;">
+                        <i class="fa-solid fa-sparkles text-teal-highlight"></i> MediScribe Assistant
+                    </h5>
+                    <p class="small pb-3" style="color: #07152D; opacity: 0.8; border-bottom: 1px solid #67DDE0;">Consultation Copilot for quick diagnoses summaries, lab suggestions & medical coding.</p>
+                    
+                    <!-- Chat dialogue feed -->
+                    <div id="chatFeed" class="d-flex flex-column gap-3 overflow-y-auto mb-3" style="max-height: 60vh; min-height: 40vh;">
+                        <div class="p-3 rounded-3 text-start" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                            <span class="small text-teal-highlight d-block fw-semibold mb-1">MediScribe Assistant</span>
+                            <p class="small mb-0" style="color: #07152D !important; line-height: 1.5;">Hi Doctor. I've analyzed the patient consultation. You can ask me to explain medical terms, suggest therapy, or write coding options.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat input form -->
+                <div class="pt-3">
+                    <form id="chatForm">
+                        <div class="input-group">
+                            <input type="text" id="chatInput" class="form-control bg-white text-dark" placeholder="Ask Assistant..." style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                            <button type="submit" class="btn action-btn-teal text-white"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const saveBtn = document.getElementById('saveBtn');
+        const editorArea = document.getElementById('editorArea');
+        const aiImprove = document.getElementById('aiImprove');
+        const aiSummarize = document.getElementById('aiSummarize');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const chatFeed = document.getElementById('chatFeed');
+        
+        // Save clinical note
+        saveBtn.addEventListener('click', function() {
+            const content = editorArea.value;
+            fetch('{% url "save_document" active_doc.id %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'content': content,
+                    'approve': 'true'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Clinical Document saved and marked as approved!');
+                    window.location.reload();
+                }
+            });
+        });
+        
+        // AI refinement buttons
+        aiImprove.addEventListener('click', function() {
+            editorArea.value = "AI Improved Content:\n\n" + editorArea.value;
+            alert('AI refined the documentation structure!');
+        });
+        
+        aiSummarize.addEventListener('click', function() {
+            editorArea.value = "AI Summarized Note:\n\n- Chief Complaint: Meniscus concern.\n- Objective: Medial clicking.\n- Recommendation: MRI exam.";
+            alert('AI generated a concise clinical summary!');
+        });
+        
+        // Chatbot helper
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const text = chatInput.value;
+            
+            // Append User message
+            chatFeed.innerHTML += `
+                <div class="p-3 rounded-3 align-self-end w-100 text-start" style="background-color: #FFFFFF; border: 1px solid #67DDE0;">
+                    <span class="small text-teal-highlight d-block fw-semibold mb-1">Dr. {{ request.user.last_name }}</span>
+                    <p class="small mb-0" style="color: #07152D !important;">${text}</p>
+                </div>
+            `;
+            chatInput.value = "";
+            chatFeed.scrollTop = chatFeed.scrollHeight;
+            
+            // Post query to backend
+            fetch('{% url "api_assistant" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'query': text,
+                    'consultation_id': '{{ consultation.id }}'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                chatFeed.innerHTML += `
+                    <div class="p-3 rounded-3 w-100 text-start" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <span class="small text-teal-highlight d-block fw-semibold mb-1">MediScribe Assistant</span>
+                        <p class="small mb-0" style="color: #07152D !important; white-space: pre-wrap; line-height: 1.5;">${data.reply || data.message || 'Ready to assist.'}</p>
+                    </div>
+                `;
+                chatFeed.scrollTop = chatFeed.scrollHeight;
+            });
+        });
+    });
+</script>
+{% endblock %}

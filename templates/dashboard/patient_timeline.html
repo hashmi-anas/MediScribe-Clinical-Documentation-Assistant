@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient History & Timeline — MediScribe{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 glass-sidebar p-3 d-flex flex-column justify-content-between d-none d-md-flex" style="background-color: #F4FAFA; border-right: 1px solid #67DDE0;">
+            <div>
+                <a class="brand-font d-flex align-items-center mb-4 text-decoration-none px-2" href="{% url 'dashboard' %}">
+                    <i class="fa-solid fa-notes-medical text-teal-highlight me-2 fs-4"></i>
+                    <span class="fw-bold fs-5" style="color: #07152D;">Medi<span class="text-teal-highlight">Scribe</span></span>
+                </a>
+                
+                <div class="d-flex flex-column gap-2">
+                    <a href="{% url 'dashboard' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="background-color: #FFFFFF; font-weight: 500; color: #07152D; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-chart-line me-2 text-teal-highlight"></i> Dashboard Home
+                    </a>
+                    
+                    <a href="{% url 'new_consultation' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-circle-plus me-2 text-teal-highlight"></i> New Consultation
+                    </a>
+                    
+                    <a href="{% url 'consultations_list' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-folder-open me-2 text-teal-highlight"></i> Consultation Records
+                    </a>
+                </div>
+            </div>
+            
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn w-100 py-2 rounded-3" style="background-color: #F4FAFA; border: 1px solid #67DDE0; color: #07152D; font-weight: 500;"><i class="fa-solid fa-circle-chevron-left me-2"></i> Dashboard</a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 offset-md-3 col-lg-10 offset-lg-2 p-4 p-md-5" style="background-color: #F4FAFA; min-height: 100vh;">
+            <!-- Header -->
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background-color: #67DDE0; color: #07152D;">
+                    <i class="fa-solid fa-hospital-user fs-3"></i>
+                </div>
+                <div>
+                    <h2 class="fw-bold mb-1" style="color: #07152D !important;">{{ patient.name }}</h2>
+                    <p class="mb-0" style="color: #07152D !important; opacity: 0.85; font-size: 13px;">Gender: <strong>{{ patient.gender }}</strong> | Date of Birth: <strong>{{ patient.date_of_birth|date:"M d, Y" }}</strong> | Blood Group: <strong>{{ patient.blood_group|default:"N/A" }}</strong></p>
+                </div>
+            </div>
+            
+            <!-- Patient summary card -->
+            <div class="card p-4 mb-4 bg-white rounded-4 shadow-sm" style="border: 1px solid #67DDE0;">
+                <h5 class="fw-bold mb-3" style="color: #07152D !important;"><i class="fa-solid fa-clipboard-list text-teal-highlight me-2"></i> Clinical Profile Summary</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <span class="small d-block" style="color: #07152D; opacity: 0.75; font-weight: 600;">CHRONIC CONDITIONS</span>
+                        <p class="mt-1 mb-0" style="color: #07152D !important; font-weight: 500;">{{ patient.chronic_conditions|default:"None documented" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="small d-block" style="color: #07152D; opacity: 0.75; font-weight: 600;">ALLERGIES</span>
+                        <p class="mt-1 mb-0 fw-semibold" style="color: #FF6B21;">{{ patient.allergies|default:"No known allergies" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Clinical Documentation Framework & Definitions Box -->
+            <div class="card p-4 bg-white rounded-4 shadow-sm mb-4" style="border: 1px solid #67DDE0;">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-bold mb-1" style="color: #07152D !important;"><i class="fa-solid fa-book-medical text-teal-highlight me-1.5"></i> Medical Documentation Types & Guide</h6>
+                        <p class="small mb-0" style="color: #07152D !important; opacity: 0.85;">Understand the clinical notes, diagnoses, and prescriptions on your timeline.</p>
+                    </div>
+                    
+                    <!-- Exact Pill Container matching user image -->
+                    <div class="d-inline-flex p-1 rounded-pill" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                        <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold timeline-def-pill active" id="tl-pill-soap" onclick="switchTimelineDocDef('soap')" style="background-color: #078A83; color: #FFFFFF; font-size: 12px; border: none;">SOAP</button>
+                        <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold timeline-def-pill text-primary" id="tl-pill-clinical" onclick="switchTimelineDocDef('clinical')" style="font-size: 12px; border: none; background: transparent;">Clinical</button>
+                        <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold timeline-def-pill text-primary" id="tl-pill-rx" onclick="switchTimelineDocDef('rx')" style="font-size: 12px; border: none; background: transparent;">Rx</button>
+                        <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold timeline-def-pill text-primary" id="tl-pill-discharge" onclick="switchTimelineDocDef('discharge')" style="font-size: 12px; border: none; background: transparent;">Discharge</button>
+                        <button type="button" class="btn btn-sm py-1 px-3 rounded-pill fw-bold timeline-def-pill text-primary" id="tl-pill-followup" onclick="switchTimelineDocDef('followup')" style="font-size: 12px; border: none; background: transparent;">Follow-up</button>
+                    </div>
+                </div>
+
+                <!-- Definition Detail -->
+                <div class="p-3 rounded-3" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                    <div id="tl-content-soap" class="timeline-def-view">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge px-2.5 py-1 rounded-pill" style="background-color: #078A83; color: #FFFFFF;">SOAP Note</span>
+                            <span class="fw-bold small" style="color: #07152D;">Subjective, Objective, Assessment, and Plan Summary</span>
+                        </div>
+                        <div class="row g-2 small" style="color: #07152D; opacity: 0.9;">
+                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Subjective (S):</strong> Your symptoms, feelings & reason for visit.</div>
+                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Objective (O):</strong> Physical vitals, exam & diagnostic lab data.</div>
+                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Assessment (A):</strong> Primary doctor diagnosis & medical evaluation.</div>
+                            <div class="col-md-3"><strong><i class="fa-solid fa-circle-dot text-teal-highlight me-1"></i> Plan (P):</strong> Prescribed treatment, medications & recovery orders.</div>
+                        </div>
+                    </div>
+
+                    <div id="tl-content-clinical" class="timeline-def-view d-none">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Clinical Note</span>
+                            <span class="fw-bold small" style="color: #07152D;">Complete Encounter Record</span>
+                        </div>
+                        <p class="small mb-0" style="color: #07152D; opacity: 0.9;">Detailed notes written by your physician summarizing your symptoms, examination observations, medical history review, and expert clinical conclusions.</p>
+                    </div>
+
+                    <div id="tl-content-rx" class="timeline-def-view d-none">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Rx (Prescription)</span>
+                            <span class="fw-bold small" style="color: #07152D;">Official Doctor's Prescription</span>
+                        </div>
+                        <p class="small mb-0" style="color: #07152D; opacity: 0.9;">The authorized medical prescription stating exact medication names, doses, timing (morning/night), duration, food instructions, and refill allowances.</p>
+                    </div>
+
+                    <div id="tl-content-discharge" class="timeline-def-view d-none">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Discharge Summary</span>
+                            <span class="fw-bold small" style="color: #07152D;">Visit & Treatment Summary</span>
+                        </div>
+                        <p class="small mb-0" style="color: #07152D; opacity: 0.9;">A complete summary of your hospital or clinic visit, treatments given, condition upon discharge, home medications, and self-care recommendations.</p>
+                    </div>
+
+                    <div id="tl-content-followup" class="timeline-def-view d-none">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge px-2.5 py-1 rounded-pill text-primary bg-light border">Follow-up Plan</span>
+                            <span class="fw-bold small" style="color: #07152D;">Next Steps & Care Schedule</span>
+                        </div>
+                        <p class="small mb-0" style="color: #07152D; opacity: 0.9;">Schedule of your upcoming doctor appointments, required follow-up blood/lab tests, lifestyle recovery guidance, and red-flag symptoms to watch out for.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chronological Timeline -->
+            <h4 class="fw-bold mb-4 mt-4" style="color: #07152D !important;">Consultation Timeline History</h4>
+            
+            <div class="position-relative ps-4 border-start border-2" style="margin-left: 20px; border-color: #67DDE0 !important;">
+                {% for consult in consultations %}
+                    <!-- Timeline item -->
+                    <div class="mb-5 position-relative">
+                        <!-- Bullet dot -->
+                        <div class="position-absolute rounded-circle" style="width: 16px; height: 16px; left: -25px; top: 4px; border: 3px solid #FFFFFF; background-color: #078A83; box-shadow: 0 0 0 2px #078A83;"></div>
+                        
+                        <div class="card p-4 bg-white rounded-4 shadow-sm" style="border: 1px solid #67DDE0;">
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <div>
+                                    <h5 class="mb-0 fw-bold" style="color: #07152D !important;">{{ consult.department }} - {{ consult.visit_type }}</h5>
+                                    <span class="small" style="color: #07152D !important; opacity: 0.75;">Date: {{ consult.created_at|date:"M d, Y" }} | Provider: Dr. {{ consult.doctor.last_name|default:consult.doctor.username }}</span>
+                                </div>
+                                <a href="{% url 'consultation_editor' consult.id %}" class="btn btn-sm action-btn-teal rounded-pill px-3 py-1.5 text-decoration-none" style="font-weight: 500;"><i class="fa-solid fa-eye me-1"></i> View Clinical Documents</a>
+                            </div>
+                            
+                            <!-- Transcript snippet -->
+                            <div class="p-3 rounded-3 mb-3" style="background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                                <span class="small d-block mb-1" style="color: #07152D; font-weight: 600; font-size: 11px;">TRANSCRIPT HIGHLIGHT:</span>
+                                <p class="small mb-0 fst-italic" style="color: #07152D !important;">"{{ consult.transcript|truncatewords:40 }}"</p>
+                            </div>
+                            
+                            <!-- Document summary tabs indicators -->
+                            <div class="d-flex gap-2 flex-wrap">
+                                {% for doc in consult.documents.all %}
+                                    <span class="badge px-2.5 py-1.5 rounded-pill" style="background-color: #F4FAFA; border: 1px solid #67DDE0 !important; color: #07152D !important; font-weight: 500;"><i class="fa-solid fa-file-invoice text-teal-highlight me-1"></i> {{ doc.get_document_type_display }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="ps-2" style="color: #07152D !important; opacity: 0.75;">No consult sessions recorded for this patient.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function switchTimelineDocDef(type) {
+        const types = ['soap', 'clinical', 'rx', 'discharge', 'followup'];
+        types.forEach(t => {
+            const pill = document.getElementById(`tl-pill-${t}`);
+            const content = document.getElementById(`tl-content-${t}`);
+            if (t === type) {
+                if (pill) {
+                    pill.style.backgroundColor = '#078A83';
+                    pill.style.color = '#FFFFFF';
+                    pill.classList.remove('text-primary');
+                }
+                if (content) content.classList.remove('d-none');
+            } else {
+                if (pill) {
+                    pill.style.backgroundColor = 'transparent';
+                    pill.style.color = '';
+                    pill.classList.add('text-primary');
+                }
+                if (content) content.classList.add('d-none');
+            }
+        });
+    }
+</script>
+{% endblock %}

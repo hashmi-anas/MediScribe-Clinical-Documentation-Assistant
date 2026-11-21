@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile Settings — MediScribe{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 glass-sidebar p-3 d-flex flex-column justify-content-between d-none d-md-flex" style="background-color: #F4FAFA; border-right: 1px solid #67DDE0;">
+            <div>
+                <a class="brand-font d-flex align-items-center mb-4 text-decoration-none px-2" href="{% url 'dashboard' %}">
+                    <i class="fa-solid fa-notes-medical text-teal-highlight me-2 fs-4"></i>
+                    <span class="fw-bold fs-5" style="color: #07152D;">Medi<span class="text-teal-highlight">Scribe</span></span>
+                </a>
+                
+                <div class="d-flex flex-column gap-2">
+                    <a href="{% url 'dashboard' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D; background-color: #FFFFFF; border: 1px solid #67DDE0;">
+                        <i class="fa-solid fa-chart-line me-2 text-teal-highlight"></i> Dashboard Home
+                    </a>
+                    
+                    <a href="{% url 'new_consultation' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-circle-plus me-2 text-teal-highlight"></i> New Consultation
+                    </a>
+                    
+                    <a href="{% url 'consultations_list' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-folder-open me-2 text-teal-highlight"></i> Consultation Records
+                    </a>
+                    
+                    <a href="{% url 'profile' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center text-white" style="background-color: #078A83; font-weight: 500;">
+                        <i class="fa-solid fa-user-md me-2 text-white"></i> Profile Settings
+                    </a>
+                    
+                    <a href="{% url 'settings' %}" class="btn border-0 text-start w-100 py-2.5 px-3 rounded-3 d-flex align-items-center" style="color: #07152D;">
+                        <i class="fa-solid fa-gears me-2 text-teal-highlight"></i> Settings
+                    </a>
+                </div>
+            </div>
+            
+            <div>
+                <a href="{% url 'logout' %}" class="btn w-100 py-2 rounded-3 fw-medium" style="background-color: #F4FAFA; color: #FF6B21; border: 1px solid #FF6B21;"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 offset-md-3 col-lg-10 offset-lg-2 p-4 p-md-5" style="background-color: #F4FAFA; min-height: 100vh;">
+            <h2 class="fw-bold mb-4" style="color: #07152D !important;">Doctor Profile Settings</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert py-2 px-3 small mb-4 rounded-3" style="background-color: #F4FAFA; color: #078A83; border: 1px solid #078A83;" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="card p-4 col-xl-8 bg-white rounded-4 shadow-sm" style="border: 1px solid #67DDE0;">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label small fw-semibold" style="color: #07152D;">First Name</label>
+                            <input type="text" name="first_name" id="first_name" class="form-control bg-white text-dark" value="{{ request.user.first_name }}" style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label small fw-semibold" style="color: #07152D;">Last Name</label>
+                            <input type="text" name="last_name" id="last_name" class="form-control bg-white text-dark" value="{{ request.user.last_name }}" style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label small fw-semibold" style="color: #07152D;">Email Address</label>
+                        <input type="email" name="email" id="email" class="form-control bg-white text-dark" value="{{ request.user.email }}" style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="phone" class="form-label small fw-semibold" style="color: #07152D;">Phone Number</label>
+                        <input type="text" name="phone" id="phone" class="form-control bg-white text-dark" value="{{ request.user.phone|default_if_none:'' }}" style="border: 1px solid #67DDE0; color: #07152D !important;">
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="specialization" class="form-label small fw-semibold" style="color: #07152D;">Specialization</label>
+                            <input type="text" name="specialization" id="specialization" class="form-control bg-white text-dark" value="{{ profile.specialization }}" style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="experience_years" class="form-label small fw-semibold" style="color: #07152D;">Experience (Years)</label>
+                            <input type="number" name="experience_years" id="experience_years" class="form-control bg-white text-dark" value="{{ profile.experience_years }}" style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="preferred_language" class="form-label small fw-semibold" style="color: #07152D;">Language</label>
+                            <input type="text" name="preferred_language" id="preferred_language" class="form-control bg-white text-dark" value="{{ profile.preferred_language }}" style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="hospital" class="form-label small fw-semibold" style="color: #07152D;">Hospital / Clinic Office</label>
+                        <input type="text" name="hospital" id="hospital" class="form-control bg-white text-dark" value="{{ profile.hospital }}" style="border: 1px solid #67DDE0; color: #07152D !important;" required>
+                    </div>
+                    
+                    <button type="submit" class="btn action-btn-teal rounded-pill px-4 py-2 text-white fw-medium shadow-sm">Save Profile Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

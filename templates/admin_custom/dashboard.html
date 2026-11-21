@@ -1,0 +1,896 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard — MediScribe{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #F4FAFA !important;
+        color: #078A83;
+    }
+    .admin-sidebar {
+        background-color: #FFFFFF;
+        border-right: 1px solid #67DDE0;
+        min-height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 100;
+    }
+    .sidebar-link {
+        color: #078A83;
+        opacity: 0.9;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 10px 16px !important;
+        line-height: 1 !important;
+        cursor: pointer;
+    }
+    .sidebar-link i {
+        width: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .sidebar-link:hover {
+        background-color: #F4FAFA;
+        color: #078A83;
+        opacity: 1;
+    }
+    .sidebar-link.active {
+        background-color: #078A83 !important;
+        color: #FFFFFF !important;
+        opacity: 1;
+    }
+    .admin-topbar {
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #67DDE0;
+        padding: 12px 24px;
+        position: sticky;
+        top: 0;
+        z-index: 90;
+    }
+    .admin-card {
+        background-color: #FFFFFF;
+        border: 1px solid #67DDE0;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(7, 21, 45, 0.04);
+    }
+    .text-teal-highlight {
+        color: #078A83 !important;
+    }
+    .bg-teal-highlight {
+        background-color: #078A83 !important;
+    }
+    .action-btn-teal {
+        background-color: #078A83;
+        color: #FFFFFF !important;
+        border: none;
+        font-weight: 500;
+    }
+    .action-btn-teal:hover {
+        background-color: #078A83;
+        opacity: 0.92;
+        color: #FFFFFF !important;
+    }
+    .quick-action-card {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: 1px solid #67DDE0;
+    }
+    .quick-action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(7, 138, 131, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 admin-sidebar p-3 d-flex flex-column justify-content-between d-none d-md-flex">
+            <div>
+                <!-- Brand Logo -->
+                <div class="d-flex align-items-center mb-4 px-2">
+                    <div class="me-2 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 38px; height: 38px; border: 1px solid rgba(15, 118, 110, 0.1);">
+                        <i class="fa-solid fa-heart-pulse logo-heart fs-5"></i>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <span class="fw-bold fs-5 text-dark lh-1">Medi<span class="text-teal-highlight">Scribe</span></span>
+                        <span class="text-muted" style="font-size: 8px;">AI Clinical Documentation</span>
+                    </div>
+                </div>
+
+                <!-- Navigation List with SPA Tab switching attributes -->
+                <div class="d-flex flex-column gap-1">
+                    <div data-tab="tab-dashboard" class="sidebar-link active">
+                        <i class="fa-solid fa-chart-pie fs-5"></i> Dashboard
+                    </div>
+
+                    <div data-tab="tab-records" class="sidebar-link">
+                        <i class="fa-solid fa-file-medical fs-5"></i> Clinical Records
+                    </div>
+                    <div data-tab="tab-doctors" class="sidebar-link">
+                        <i class="fa-solid fa-user-doctor fs-5"></i> Doctors
+                    </div>
+                    <div data-tab="tab-patients" class="sidebar-link">
+                        <i class="fa-solid fa-users fs-5"></i> Patients
+                    </div>
+                    <div data-tab="tab-analytics" class="sidebar-link">
+                        <i class="fa-solid fa-chart-line fs-5"></i> Analytics
+                    </div>
+                    <div data-tab="tab-reports" class="sidebar-link">
+                        <i class="fa-solid fa-file-invoice fs-5"></i> Reports
+                    </div>
+                    <div data-tab="tab-settings" class="sidebar-link">
+                        <i class="fa-solid fa-gears fs-5"></i> Settings
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logout -->
+            <div>
+                <a href="{% url 'logout' %}" class="sidebar-link text-danger hover-light text-decoration-none">
+                    <i class="fa-solid fa-right-from-bracket fs-5"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="col-md-9 offset-md-3 col-lg-10 offset-lg-2 min-vh-100 d-flex flex-column">
+            <!-- Topbar Header -->
+            <div class="admin-topbar d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-light border-0 d-md-none"><i class="fa-solid fa-bars"></i></button>
+                    <div class="input-group" style="width: 280px; max-width: 100%;">
+                        <span class="input-group-text bg-light border-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" class="form-control bg-light border-0 text-dark small" placeholder="Search anything... Ctrl + K">
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Notifications Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none p-0 position-relative" type="button" id="adminNotifBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-regular fa-bell fs-5 text-muted"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger p-1" style="font-size: 8px;">3</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end p-0 shadow-lg border border-light-subtle rounded-4" style="width: 320px; max-width: 90vw;" aria-labelledby="adminNotifBtn">
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light rounded-top-4">
+                                <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5"><i class="fa-solid fa-bell text-teal-highlight"></i> System Alerts</h6>
+                                <span class="badge bg-teal text-teal-highlight small" style="background-color: #e6f4f2; font-size: 10px;">Admin Feed</span>
+                            </div>
+                            <div class="d-flex flex-column divide-y">
+                                <div class="p-3 border-bottom hover-light">
+                                    <span class="d-block fw-bold small text-dark">Audit Log Recorded</span>
+                                    <span class="text-muted" style="font-size: 11px;">RBAC permission validation completed successfully.</span>
+                                </div>
+                                <div class="p-3 border-bottom hover-light">
+                                    <span class="d-block fw-bold small text-dark">Groq LLM Latency</span>
+                                    <span class="text-muted" style="font-size: 11px;">Average response time: 240ms.</span>
+                                </div>
+                                <div class="p-3 hover-light">
+                                    <span class="d-block fw-bold small text-dark">EHR Integration Online</span>
+                                    <span class="text-muted" style="font-size: 11px;">FHIR JSON and PDF pipeline operational.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-link text-decoration-none p-0" type="button" id="adminSettingsBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-gear fs-5 text-muted hover-teal"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-light-subtle rounded-4 py-2" style="min-width: 200px;" aria-labelledby="adminSettingsBtn">
+                            <li class="px-3 py-1.5 border-bottom mb-1">
+                                <span class="d-block fw-bold text-dark small">{{ user.username|capfirst }}</span>
+                                <span class="text-muted" style="font-size: 11px;">Administrator</span>
+                            </li>
+                            <li><button class="dropdown-item py-2 d-flex align-items-center gap-2 small text-dark" type="button" onclick="switchTab('tab-admin-llm')"><i class="fa-solid fa-microchip text-muted" style="width: 16px;"></i> LLM Configuration</button></li>
+                            <li><button class="dropdown-item py-2 d-flex align-items-center gap-2 small text-dark" type="button" onclick="switchTab('tab-admin-logs')"><i class="fa-solid fa-list-check text-muted" style="width: 16px;"></i> Audit Logs</button></li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 small text-danger" href="{% url 'logout' %}"><i class="fa-solid fa-right-from-bracket" style="width: 16px;"></i> Logout</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 border-start ps-3">
+                        <div class="d-flex flex-column text-end">
+                            <span class="fw-bold text-dark small mb-0">{{ user.username|capfirst }}</span>
+                            <span class="text-muted" style="font-size: 9px;">Super Admin</span>
+                        </div>
+                        <div class="bg-teal bg-opacity-15 rounded-circle d-flex align-items-center justify-content-center text-teal-highlight fw-bold" style="width: 36px; height: 36px; background-color: #e6f4f2;">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Contents Container -->
+            <div class="p-4 flex-grow-1">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} py-2 px-3 small border-0 mb-3" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- 1. DASHBOARD TAB -->
+                <div id="tab-dashboard" class="dashboard-tab-content">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                        <div>
+                            <h4 class="fw-bold text-dark mb-1">Welcome back, Administrator</h4>
+                            <p class="text-muted small mb-0">Here's what's happening with MediScribe today.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button onclick="toggleGlobalAI()" class="btn action-btn-teal px-3 py-2 rounded-pill small d-flex align-items-center gap-1.5"><i class="fa-solid fa-comment-dots"></i> Launch AI Assistant</button>
+                            <button onclick="switchTab('tab-reports')" class="btn btn-white border border-light-subtle px-3 py-2 rounded-pill small"><i class="fa-solid fa-file-lines me-1"></i> View Reports</button>
+                        </div>
+                    </div>
+
+                    <!-- KPI Metric Rows -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-muted small">Total Doctors</span>
+                                    <h3 class="fw-bold text-dark mt-1 mb-0">{{ doctors_count|default:"142" }}</h3>
+                                    <span class="text-success small" style="font-size: 11px;"><i class="fa-solid fa-arrow-up me-0.5"></i> 12.5% <span class="text-muted">vs last month</span></span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center rounded-circle bg-teal bg-opacity-10 text-teal-highlight" style="width: 48px; height: 48px; background-color: #e6f4f2;">
+                                    <i class="fa-solid fa-user-doctor fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-muted small">Total Patients</span>
+                                    <h3 class="fw-bold text-dark mt-1 mb-0">{{ patients_count|default:"8,562" }}</h3>
+                                    <span class="text-success small" style="font-size: 11px;"><i class="fa-solid fa-arrow-up me-0.5"></i> 8.3% <span class="text-muted">vs last month</span></span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center rounded-circle bg-teal bg-opacity-10 text-teal-highlight" style="width: 48px; height: 48px; background-color: #e6f4f2;">
+                                    <i class="fa-solid fa-users fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-muted small">Today's Consultations</span>
+                                    <h3 class="fw-bold text-dark mt-1 mb-0">{{ consultations_count|default:"216" }}</h3>
+                                    <span class="text-success small" style="font-size: 11px;"><i class="fa-solid fa-arrow-up me-0.5"></i> 15.7% <span class="text-muted">vs yesterday</span></span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 text-warning" style="width: 48px; height: 48px; background-color: #fef3c7;">
+                                    <i class="fa-solid fa-notes-medical fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="admin-card p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="text-muted small">AI Documents Generated</span>
+                                    <h3 class="fw-bold text-dark mt-1 mb-0">{{ documents_count|default:"1,254" }}</h3>
+                                    <span class="text-success small" style="font-size: 11px;"><i class="fa-solid fa-arrow-up me-0.5"></i> 20.4% <span class="text-muted">vs yesterday</span></span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center rounded-circle bg-purple bg-opacity-10 text-purple" style="width: 48px; height: 48px; background-color: #f3e8ff; color: #a855f7;">
+                                    <i class="fa-solid fa-sparkles fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Grid Row -->
+                    <div class="row g-4 mb-4">
+                        <!-- AI Assistant Dashboard card -->
+                        <div class="col-lg-7">
+                            <div class="admin-card p-4 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">MediScribe AI Assistant</h5>
+                                    <p class="text-muted small mb-4">Your intelligent clinical documentation assistant.</p>
+                                    
+                                    <div class="text-center py-4 px-2 my-2 border border-dashed rounded-4" style="background-color: #fafafa;">
+                                        <div class="d-flex align-items-center justify-content-center bg-teal bg-opacity-15 text-teal-highlight rounded-circle mx-auto mb-3" style="width: 50px; height: 50px; background-color: #e6f4f2;">
+                                            <i class="fa-solid fa-robot fs-4"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-2">How can I help you today?</h6>
+                                        <p class="text-muted small mx-auto mb-3" style="max-width: 320px;">Ask me anything about patients, consultations, reports, prescriptions, or any clinical documentation.</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control border-light-subtle bg-light small" placeholder="Ask anything...">
+                                        <button onclick="toggleGlobalAI()" class="btn btn-teal-highlight bg-teal-highlight text-white px-3"><i class="fa-solid fa-paper-plane"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity Feed -->
+                        <div class="col-lg-5">
+                            <div class="admin-card p-4 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold text-dark mb-0">Recent Activity</h5>
+                                    <button class="btn btn-link text-teal-highlight text-decoration-none small p-0">View All</button>
+                                </div>
+                                <div class="d-flex flex-column gap-3 mt-3">
+                                    <div class="d-flex gap-3">
+                                        <div class="d-flex align-items-center justify-content-center bg-teal bg-opacity-10 text-teal-highlight rounded-circle" style="width: 36px; height: 36px; background-color: #e6f4f2; flex-shrink: 0;">
+                                            <i class="fa-solid fa-user-doctor"></i>
+                                        </div>
+                                        <div>
+                                            <span class="d-block text-dark fw-semibold small">Dr. Sarah Johnson uploaded a consultation</span>
+                                            <span class="text-muted" style="font-size: 10px;">10:30 AM</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-3">
+                                        <div class="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning rounded-circle" style="width: 36px; height: 36px; background-color: #fef3c7; flex-shrink: 0;">
+                                            <i class="fa-solid fa-sparkles"></i>
+                                        </div>
+                                        <div>
+                                            <span class="d-block text-dark fw-semibold small">AI generated SOAP note</span>
+                                            <span class="text-muted" style="font-size: 10px;">10:28 AM</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-3">
+                                        <div class="d-flex align-items-center justify-content-center bg-purple bg-opacity-10 text-purple rounded-circle" style="width: 36px; height: 36px; background-color: #f3e8ff; color: #a855f7; flex-shrink: 0;">
+                                            <i class="fa-solid fa-prescription-bottle-medical"></i>
+                                        </div>
+                                        <div>
+                                            <span class="d-block text-dark fw-semibold small">Prescription generated for John Smith</span>
+                                            <span class="text-muted" style="font-size: 10px;">10:25 AM</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-3">
+                                        <div class="d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle" style="width: 36px; height: 36px; background-color: #d1fae5; flex-shrink: 0;">
+                                            <i class="fa-solid fa-file-medical"></i>
+                                        </div>
+                                        <div>
+                                            <span class="d-block text-dark fw-semibold small">Discharge summary exported</span>
+                                            <span class="text-muted" style="font-size: 10px;">10:20 AM</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row Grid -->
+                    <div class="row g-4">
+                        <!-- Consultations Overview Chart -->
+                        <div class="col-lg-8">
+                            <div class="admin-card p-4 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-0">Consultations Overview</h5>
+                                        <span class="text-muted small" style="font-size: 11px;">Real-time daily patient consultation traffic</span>
+                                    </div>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 small"><i class="fa-solid fa-circle small text-success me-1"></i> Live Traffic</span>
+                                </div>
+                                <div style="height: 220px;">
+                                    <canvas id="consultationsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI System Status -->
+                        <div class="col-lg-4">
+                            <div class="admin-card p-4 h-100">
+                                <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-server text-teal-highlight me-2"></i> System & AI Status</h5>
+                                <div class="d-flex flex-column gap-3 mt-2">
+                                    <div class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                                        <span class="small text-muted"><i class="fa-solid fa-microphone text-teal-highlight me-1.5"></i> Speech Engine (Whisper)</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1 px-2 small">Operational</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                                        <span class="small text-muted"><i class="fa-solid fa-microchip text-teal-highlight me-1.5"></i> LLM (gpt-oss-120b)</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1 px-2 small">Connected</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                                        <span class="small text-muted"><i class="fa-solid fa-database text-teal-highlight me-1.5"></i> PostgreSQL / SQLite</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1 px-2 small">Healthy</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small text-muted"><i class="fa-solid fa-shield-halved text-teal-highlight me-1.5"></i> HIPAA Compliance Pipeline</span>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 py-1 px-2 small">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- 3. CLINICAL RECORDS TAB -->
+                <div id="tab-records" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-file-medical text-teal-highlight me-2"></i> Clinical Record Archives</h5>
+                        <p class="text-muted small mb-4">A compiled repository of SOAP logs, prescriptions, and summaries generated by the AI platform.</p>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover text-start align-middle small">
+                                <thead class="bg-light">
+                                    <tr class="text-muted">
+                                        <th>Patient ID</th>
+                                        <th>Generated By</th>
+                                        <th>Doc Type</th>
+                                        <th>Date Generated</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>#PAT-2039</td>
+                                        <td>Dr. Sarah Johnson</td>
+                                        <td><span class="badge bg-secondary bg-opacity-10 text-dark">SOAP Note</span></td>
+                                        <td>10 mins ago</td>
+                                        <td><span class="badge bg-success bg-opacity-10 text-success">Saved</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>#PAT-1182</td>
+                                        <td>Dr. Michael Chang</td>
+                                        <td><span class="badge bg-secondary bg-opacity-10 text-dark">Prescription</span></td>
+                                        <td>2 hours ago</td>
+                                        <td><span class="badge bg-success bg-opacity-10 text-success">Saved</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>#PAT-8562</td>
+                                        <td>Dr. Alan Smith</td>
+                                        <td><span class="badge bg-secondary bg-opacity-10 text-dark">Discharge Summary</span></td>
+                                        <td>Yesterday</td>
+                                        <td><span class="badge bg-success bg-opacity-10 text-success">Saved</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. DOCTORS TAB -->
+                <div id="tab-doctors" class="dashboard-tab-content d-none">
+                    <div class="row g-4">
+                        <!-- Add Doctor Form -->
+                        <div class="col-lg-4">
+                            <div class="admin-card p-4">
+                                <h5 class="fw-bold text-dark mb-2"><i class="fa-solid fa-user-plus text-teal-highlight me-2"></i> Enroll New Doctor</h5>
+                                <p class="text-muted small mb-3">Create access credentials and set specialization profiles.</p>
+                                
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="add_doctor">
+                                    
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small mb-1">First Name</label>
+                                            <input type="text" name="first_name" class="form-control form-control-sm border-light-subtle bg-white text-dark" placeholder="John" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small mb-1">Last Name</label>
+                                            <input type="text" name="last_name" class="form-control form-control-sm border-light-subtle bg-white text-dark" placeholder="Doe" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label text-muted small mb-1">Username</label>
+                                        <input type="text" name="username" class="form-control form-control-sm border-light-subtle bg-white text-dark" placeholder="doctor_john" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label text-muted small mb-1">Email Address</label>
+                                        <input type="email" name="email" class="form-control form-control-sm border-light-subtle bg-white text-dark" placeholder="john.doe@hospital.com" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label text-muted small mb-1">Password</label>
+                                        <input type="password" name="password" class="form-control form-control-sm border-light-subtle bg-white text-dark" placeholder="••••••••" required>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small mb-1">Specialization</label>
+                                            <input type="text" name="specialization" class="form-control form-control-sm border-light-subtle bg-white text-dark" placeholder="Cardiology..." required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small mb-1">Hospital</label>
+                                            <input type="text" name="hospital" class="form-control form-control-sm border-light-subtle bg-white text-dark" placeholder="Hospital name..." required>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn action-btn-teal btn-sm w-100 py-2 rounded-pill"><i class="fa-solid fa-plus me-1"></i> Add Doctor</button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Doctor List -->
+                        <div class="col-lg-8">
+                            <div class="admin-card p-4">
+                                <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-doctor text-teal-highlight me-2"></i> Active Clinical Practitioners</h5>
+                                <p class="text-muted small mb-3">Enrolled doctors with authorized system access.</p>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover text-start align-middle small">
+                                        <thead class="bg-light">
+                                            <tr class="text-muted">
+                                                <th>Doctor Name</th>
+                                                <th>Username</th>
+                                                <th>Specialization</th>
+                                                <th>Hospital</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for doc in active_doctors %}
+                                                <tr>
+                                                    <td class="fw-bold text-dark">Dr. {{ doc.user.first_name }} {{ doc.user.last_name }}</td>
+                                                    <td>{{ doc.user.username }}</td>
+                                                    <td><span class="badge bg-teal bg-opacity-10 text-teal-highlight border border-teal-highlight border-opacity-25">{{ doc.specialization }}</span></td>
+                                                    <td>{{ doc.hospital }}</td>
+                                                    <td><span class="badge bg-success bg-opacity-10 text-success">Active</span></td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted py-4">No enrolled doctors found.</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. PATIENTS TAB -->
+                <div id="tab-patients" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-users text-teal-highlight me-2"></i> Registered Patient Index</h5>
+                        <p class="text-muted small mb-4">View total count of patients documented via MediScribe.</p>
+                        
+                        <div class="border rounded-4 p-5 text-center bg-light bg-opacity-50">
+                            <h2 class="fw-bold text-dark mb-2">{{ patients_count|default:"8,562" }}</h2>
+                            <p class="text-muted small">Total Patient Records Registered under MediScribe HIPAA Compliance.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. ANALYTICS TAB -->
+                <div id="tab-analytics" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-chart-line text-teal-highlight me-2"></i> Advanced Platform Analytics</h5>
+                                <p class="text-muted small mb-0">Tracking platform growth metrics, system performance, and doctor engagement in real time.</p>
+                            </div>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1.5"><i class="fa-solid fa-circle small text-success me-1"></i> Live Database Feed</span>
+                        </div>
+
+                        <!-- Real-Time Metrics Summary Grid -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-sm-6 col-xl-3">
+                                <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                                    <span class="small text-muted d-block mb-1">Total Consultations</span>
+                                    <h4 class="fw-bold text-dark mb-0" style="color: #0f172a !important;">{{ consultations_count }}</h4>
+                                    <span class="small text-success" style="font-size: 10.5px;"><i class="fa-solid fa-arrow-trend-up"></i> Live records</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-xl-3">
+                                <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                                    <span class="small text-muted d-block mb-1">Documents Generated</span>
+                                    <h4 class="fw-bold text-dark mb-0" style="color: #0f172a !important;">{{ documents_count }}</h4>
+                                    <span class="small text-teal-highlight" style="font-size: 10.5px;">SOAP + Rx + Summaries</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-xl-3">
+                                <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                                    <span class="small text-muted d-block mb-1">SOAP Notes</span>
+                                    <h4 class="fw-bold text-dark mb-0" style="color: #0f172a !important;">{{ doc_breakdown.SOAP|default:"0" }}</h4>
+                                    <span class="small text-muted" style="font-size: 10.5px;">AI clinical drafts</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-xl-3">
+                                <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                                    <span class="small text-muted d-block mb-1">Prescriptions (Rx)</span>
+                                    <h4 class="fw-bold text-dark mb-0" style="color: #0f172a !important;">{{ doc_breakdown.Prescriptions|default:"0" }}</h4>
+                                    <span class="small text-muted" style="font-size: 10.5px;">Authorized dosages</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="height: 320px;">
+                            <canvas id="detailedAnalyticsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. REPORTS TAB (AUDIT LOGS) -->
+                <div id="tab-reports" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4" id="audit">
+                        <h5 class="fw-bold text-dark mb-2"><i class="fa-solid fa-shield-halved text-teal-highlight me-2"></i> System Audit & Activity Logs</h5>
+                        <p class="text-muted small mb-4">Tracking active login sessions, prompt changes, and system activities.</p>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0 text-start small">
+                                <thead class="bg-light">
+                                    <tr class="text-muted">
+                                        <th class="py-2.5">User</th>
+                                        <th class="py-2.5">Action</th>
+                                        <th class="py-2.5">IP Address</th>
+                                        <th class="py-2.5">Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                        <tr class="bg-transparent">
+                                            <td class="py-2.5 text-dark fw-semibold">{{ log.user.username|default:"System" }}</td>
+                                            <td>{{ log.action }}</td>
+                                            <td>{{ log.ip_address|default:"localhost" }}</td>
+                                            <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No audit logs recorded yet.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. SETTINGS TAB (PROMPT ENGINE) -->
+                <div id="tab-settings" class="dashboard-tab-content d-none">
+                    <div class="admin-card p-4" id="prompts">
+                        <h5 class="fw-bold text-dark mb-2"><i class="fa-solid fa-gears text-teal-highlight me-2"></i> Prompt Engineering Layer Parameters</h5>
+                        <p class="text-muted small mb-4">Modify backend system instructions and user parameters for generative clinical notes.</p>
+                        
+                        <div class="row g-4">
+                            {% for prompt in prompts %}
+                                <div class="col-md-12">
+                                    <div class="p-4 bg-light rounded-3 border border-light-subtle">
+                                        <h6 class="text-dark fw-bold mb-2">{{ prompt.name }}</h6>
+                                        <p class="small text-muted">{{ prompt.description }}</p>
+                                        
+                                        <form action="{% url 'update_prompt' prompt.id %}" method="POST">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted small">System Instruction Prompt</label>
+                                                <textarea name="system_prompt" class="form-control bg-white border-light-subtle text-dark font-monospace small" rows="4">{{ prompt.system_prompt }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted small">User Prompt Template</label>
+                                                <textarea name="user_prompt_template" class="form-control bg-white border-light-subtle text-dark font-monospace small" rows="3">{{ prompt.user_prompt_template }}</textarea>
+                                            </div>
+                                            <button type="submit" class="btn action-btn-teal btn-sm px-3 rounded-pill">Update Instructions</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted small">No custom templates initialized. Run database seed to populate.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Global function to switch tabs via sidebar click or in-dashboard buttons
+    function switchTab(tabId) {
+        // Toggle active class on sidebar links
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            if (link.getAttribute('data-tab') === tabId) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+        
+        // Hide all tabs
+        document.querySelectorAll('.dashboard-tab-content').forEach(content => {
+            content.classList.add('d-none');
+        });
+        
+        // Show specified tab
+        const activeContent = document.getElementById(tabId);
+        if (activeContent) {
+            activeContent.classList.remove('d-none');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Add click listener to all sidebar tab switchers
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                if (targetTab) {
+                    switchTab(targetTab);
+                }
+            });
+        });
+
+        // Initialize dashboard overview mini line chart with real-time dynamic database records
+        const dailyLabels = {{ analytics_daily_labels|default:'["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]'|safe }};
+        const dailyData = {{ analytics_daily_data|default:'[0, 0, 0, 0, 0, 0, 0]'|safe }};
+        
+        const ctx = document.getElementById('consultationsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Consultations',
+                    data: dailyData,
+                    borderColor: '#078A83',
+                    backgroundColor: 'rgba(7, 138, 131, 0.15)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#078A83'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(7, 21, 45, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 10
+                            },
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize detailed platform analytics chart with real-time monthly growth
+        const monthsLabels = {{ analytics_months_labels|default:'["Jan", "Feb", "Mar", "Apr", "May", "Jun"]'|safe }};
+        const monthsData = {{ analytics_months_data|default:'[0, 0, 0, 0, 0, 0]'|safe }};
+        
+        const ctxDetail = document.getElementById('detailedAnalyticsChart').getContext('2d');
+        new Chart(ctxDetail, {
+            type: 'bar',
+            data: {
+                labels: monthsLabels,
+                datasets: [{
+                    label: 'Total Consultations',
+                    data: monthsData,
+                    backgroundColor: '#078A83',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        grid: { color: 'rgba(7, 21, 45, 0.05)' },
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    });
+
+    function sendAdminChat(confirmedAction = null) {
+        const input = document.getElementById('admin-chat-input');
+        let query = "";
+        if (confirmedAction) {
+            query = `Confirm: ${confirmedAction.action_name}`;
+        } else if (input) {
+            query = input.value.trim();
+            if (!query) return;
+            input.value = '';
+        }
+        
+        const box = document.getElementById('admin-chat-box');
+        if (box) {
+            box.innerHTML += `
+                <div class="d-flex gap-3 mb-3 justify-content-end">
+                    <div class="p-3 rounded-4 bg-light border border-light-subtle" style="max-width: 80%;">
+                        <span class="d-block small text-dark">${query}</span>
+                    </div>
+                </div>
+            `;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        const payload = { message: query, query: query, context: { url: window.location.pathname } };
+        if (confirmedAction) payload.confirmed_action = confirmedAction;
+        
+        fetch("/api/chatbot/message/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ui_action) {
+                if (data.ui_action.type === 'SWITCH_TAB' && typeof switchTab === 'function') {
+                    switchTab(data.ui_action.target);
+                }
+            }
+
+            let confirmBtnHtml = '';
+            if (data.status === 'confirmation_required') {
+                confirmBtnHtml = `
+                    <div class="mt-2.5 pt-2 border-top d-flex gap-2 justify-content-start">
+                        <button class="btn btn-danger btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center" style="font-size: 11.5px;" onclick='sendAdminChat(${JSON.stringify(data)})'>
+                            <i class="fa-solid fa-check me-1"></i> Confirm
+                        </button>
+                    </div>
+                `;
+            }
+
+            let rawMessage = data.message || 'Action completed.';
+            let messageHtml = rawMessage.trim().replace(/\n\n+/g, '<br><br>').replace(/\n/g, '<br>');
+
+            if (box) {
+                box.innerHTML += `
+                    <div class="d-flex gap-3 mb-3 align-items-start text-start">
+                        <div class="bg-teal bg-opacity-10 text-teal-highlight rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 36px; height: 36px; background-color: #e6f4f2; flex-shrink: 0;">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="p-3 rounded-4 bg-white border border-light-subtle text-dark small text-start" style="max-width: 82%; line-height: 1.55; font-size: 12.5px; text-align: left !important; word-break: break-word;">
+                            <div style="text-align: left !important;">${messageHtml}</div>
+                            ${confirmBtnHtml}
+                        </div>
+                    </div>
+                `;
+                box.scrollTop = box.scrollHeight;
+            }
+        })
+        .catch(err => {
+            if (box) {
+                box.innerHTML += `
+                    <div class="d-flex gap-3 mb-3 align-items-start text-start">
+                        <div class="bg-teal bg-opacity-10 text-teal-highlight rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 36px; height: 36px; background-color: #e6f4f2; flex-shrink: 0;">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="p-3 rounded-4 bg-danger bg-opacity-10 text-danger border small text-start" style="max-width: 82%; font-size: 12px; text-align: left !important;">
+                            The AI service is temporarily unavailable. Please try again shortly.
+                        </div>
+                    </div>
+                `;
+                box.scrollTop = box.scrollHeight;
+            }
+        });
+    }
+</script>
+{% endblock %}
+

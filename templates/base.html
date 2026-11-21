@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MediScribe — AI-Powered Clinical Documentation{% endblock %}</title>
+    
+    <!-- Meta tags for SEO -->
+    <meta name="description" content="Transform doctor-patient conversations into structured medical records instantly with MediScribe Generative AI.">
+    <meta name="keywords" content="Clinical Documentation, SOAP notes, Medical AI, Transcription, EHR, Healthcare AI">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- AOS Animation CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom Style Sheet -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.5">
+    <style>
+        :root {
+            --primary: #078A83;
+            --primary-light: #67DDE0;
+            --accent-orange: #FF6B21;
+            --bg-gradient: #F4FAFA;
+            --card-bg: #FFFFFF;
+            --card-border: #67DDE0;
+            --text-dark: #078A83;
+        }
+        html, body {
+            background-color: #F4FAFA !important;
+            background: #F4FAFA !important;
+            color: #078A83 !important;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2, h3, h4, h5, h6, .brand-font {
+            font-family: 'Outfit', sans-serif;
+            color: #078A83 !important;
+        }
+        .text-dark {
+            color: #078A83 !important;
+        }
+        .text-muted {
+            color: #078A83 !important;
+            opacity: 0.75 !important;
+        }
+        .bg-white {
+            background-color: #FFFFFF !important;
+        }
+        .bg-light {
+            background-color: #F4FAFA !important;
+        }
+        .card, .admin-card, .glass-card, .feature-card {
+            background-color: #FFFFFF !important;
+            border: 1px solid #67DDE0 !important;
+            color: #078A83 !important;
+        }
+        section, footer, main, nav {
+            background-color: transparent;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body style="background-color: #F4FAFA !important;">
+    
+    {% block content %}{% endblock %}
+
+    {% if user.is_authenticated %}
+    <!-- Floating Global Action-Based AI Assistant Widget -->
+    <div id="global-ai-widget" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; font-family: 'Outfit', sans-serif;">
+        <!-- Floating Chat Icon Trigger -->
+        <button id="global-ai-btn" class="btn shadow-lg rounded-circle d-flex align-items-center justify-content-center border-0 text-white" style="width: 58px; height: 58px; background-color: #078A83; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1060;" title="Open MediScribe AI Assistant">
+            <i class="fa-solid fa-robot fs-4"></i>
+        </button>
+
+        <!-- Chat Container Window -->
+        <div id="global-ai-container" class="d-none card border-0 shadow-2xl" style="position: absolute; bottom: 70px; right: 0; width: 440px; max-width: 92vw; height: 570px; display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; background-color: #FFFFFF; border: 1px solid #67DDE0; box-shadow: 0 20px 50px rgba(7, 21, 45, 0.2); transition: all 0.3s ease;">
+            <!-- Header -->
+            <div class="card-header text-white d-flex justify-content-between align-items-center py-3" style="background-color: #078A83; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-white bg-opacity-20 rounded-circle p-1.5 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="fa-solid fa-sparkles text-white"></i>
+                    </div>
+                    <div>
+                        <span class="fw-bold d-block lh-1 text-white" style="font-size: 13.5px;">MediScribe AI Assistant</span>
+                        <span class="text-white text-opacity-90" style="font-size: 10px;">Groq openai/gpt-oss-120b &bull; {{ user.role }} Mode</span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2.5">
+                    <button id="global-ai-close" title="Close" class="btn btn-link text-white p-0 border-0" style="opacity: 0.9; transition: opacity 0.2s;"><i class="fa-solid fa-xmark fs-5"></i></button>
+                </div>
+            </div>
+
+            <!-- Messages Body -->
+            <div id="global-ai-messages" class="card-body p-3 overflow-y-auto" style="flex: 1; background-color: #F4FAFA; display: flex; flex-direction: column; gap: 12px;">
+                <div class="d-flex gap-2 align-items-start text-start">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 28px; height: 28px; background-color: #67DDE0; color: #07152D; flex-shrink: 0; font-size: 11px;">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="px-3 py-2.5 rounded-3 bg-white small shadow-sm text-dark text-start" style="max-width: 85%; font-size: 12.5px; line-height: 1.55; text-align: left !important; color: #07152D !important; border: 1px solid #67DDE0;">
+                        {% if user.role == 'PATIENT' %}
+                            Hello! I am your personal health assistant. I can display your medical records, check your latest prescriptions, pull discharge summaries, or summarize visits.
+                        {% elif user.role == 'DOCTOR' %}
+                            Hello Dr. {{ user.last_name|default:user.username }}! I am your clinical AI documentation assistant. Use quick actions or natural commands to start consultations, process audio, extract symptoms & diagnoses, or generate clinical notes and prescriptions.
+                        {% else %}
+                            Administrator AI Assistant ready. Use natural commands or quick actions to inspect users, review audit logs, monitor system health, or adjust platform configurations.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Chips (Role-Specific Master Prompt Alignment) -->
+            <div id="global-ai-presets" class="px-3 py-2 bg-white d-flex flex-wrap gap-1.5" style="max-height: 95px; overflow-y: auto; border-top: 1px solid #67DDE0; border-bottom: 1px solid #67DDE0;">
+                {% if user.role == 'ADMIN' %}
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Users')">Users</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Audit Logs')">Audit Logs</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('System Status')">System Status</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Security')">Security</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('AI Model')">AI Model</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Reports')">Reports</button>
+                {% elif user.role == 'DOCTOR' %}
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Start Consultation')">Start Consultation</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('View Patient')">View Patient</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Process Consultation')">Process Consultation</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Generate Clinical Note')">Generate Clinical Note</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Generate Prescription')">Generate Prescription</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('Generate Report')">Generate Report</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('View History')">View History</button>
+                {% else %}
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('My Records')">My Records</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('My Prescriptions')">My Prescriptions</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('My Reports')">My Reports</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('My Consultations')">My Consultations</button>
+                    <button class="ai-preset-chip" onclick="sendPresetPrompt('My Follow-up')">My Follow-up</button>
+                {% endif %}
+            </div>
+
+            <!-- Footer Chat Input -->
+            <div class="card-footer p-2 bg-white border-0">
+                <div class="input-group">
+                    <input id="global-ai-input" type="text" class="form-control form-control-sm text-dark" placeholder="Command or query MediScribe..." style="font-size: 12.5px; color: #07152D; border: 1px solid #67DDE0;" onkeydown="if(event.key==='Enter') sendGlobalChat()">
+                    <button id="global-ai-send" class="btn text-white btn-sm px-3" style="background-color: #078A83;" onclick="sendGlobalChat()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .ai-preset-chip {
+            font-size: 11px;
+            font-weight: 500;
+            color: #07152D !important;
+            background-color: #F4FAFA !important;
+            border: 1px solid #67DDE0 !important;
+            padding: 3.5px 9px !important;
+            border-radius: 9999px !important;
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+        }
+        .ai-preset-chip:hover {
+            background-color: #078A83 !important;
+            color: #FFFFFF !important;
+            border-color: #078A83 !important;
+            transform: translateY(-1px);
+        }
+        #global-ai-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 10px 25px rgba(7, 138, 131, 0.4) !important;
+        }
+        @media (max-width: 576px) {
+            #global-ai-container {
+                width: 100vw !important;
+                height: 100vh !important;
+                bottom: 0 !important;
+                right: 0 !important;
+                position: fixed !important;
+                max-width: 100vw !important;
+                border-radius: 0 !important;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const btn = document.getElementById("global-ai-btn");
+            const container = document.getElementById("global-ai-container");
+            const closeBtn = document.getElementById("global-ai-close");
+            const messagesDiv = document.getElementById("global-ai-messages");
+            
+            if (btn) {
+                btn.addEventListener("click", function() {
+                    container.classList.toggle("d-none");
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+            }
+            if (closeBtn) closeBtn.addEventListener("click", () => container.classList.add("d-none"));
+        });
+
+        function sendPresetPrompt(promptText) {
+            const container = document.getElementById("global-ai-container");
+            if (container && container.classList.contains("d-none")) {
+                container.classList.remove("d-none");
+            }
+            const input = document.getElementById("global-ai-input");
+            if (input) input.value = promptText;
+            sendGlobalChat();
+        }
+
+        function toggleGlobalAI() {
+            const container = document.getElementById("global-ai-container");
+            if (container) {
+                container.classList.toggle("d-none");
+                const messagesDiv = document.getElementById("global-ai-messages");
+                if (messagesDiv) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function getCsrfToken() {
+            return getCookie("csrftoken") || (document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '') || '{{ csrf_token }}';
+        }
+
+        function sendGlobalChat(confirmedAction = null) {
+            const input = document.getElementById("global-ai-input");
+            let text = "";
+            
+            if (confirmedAction) {
+                text = `Confirm: ${confirmedAction.action_name}`;
+            } else {
+                text = input.value.trim();
+                if (!text) return;
+                input.value = "";
+            }
+            
+            const messagesDiv = document.getElementById("global-ai-messages");
+            
+            // Append User Message
+            messagesDiv.innerHTML += `
+                <div class="d-flex gap-2 justify-content-end mb-2">
+                    <div class="shadow-sm text-start" style="max-width: 80%; background-color: #078A83; color: #FFFFFF !important; font-weight: 500; font-size: 13px; line-height: 1.4; padding: 8px 14px; border-radius: 14px 14px 2px 14px; word-break: break-word;">
+                        ${text}
+                    </div>
+                </div>
+            `;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Append Typing Indicator
+            const typingId = "typing-" + Date.now();
+            messagesDiv.innerHTML += `
+                <div id="${typingId}" class="d-flex gap-2 align-items-start mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 28px; height: 28px; background-color: #67DDE0; color: #07152D; flex-shrink: 0; font-size: 11px;">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="px-3 py-2 rounded-3 bg-white small shadow-sm d-flex align-items-center gap-1.5" style="color: #07152D !important; border: 1px solid #67DDE0;">
+                        <span class="spinner-grow spinner-grow-sm" role="status" style="width: 6px; height: 6px; background-color: #078A83;"></span>
+                        <span class="small" style="font-size: 11.5px; font-weight: 500; color: #07152D;">Validating permissions & executing action...</span>
+                    </div>
+                </div>
+            `;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            const payload = {
+                message: text,
+                query: text,
+                context: {
+                    url: window.location.pathname
+                }
+            };
+            if (confirmedAction) {
+                payload.confirmed_action = confirmedAction;
+            }
+
+            fetch("/api/chatbot/message/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCsrfToken()
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                const typingNode = document.getElementById(typingId);
+                if (typingNode) typingNode.remove();
+                
+                let rawMessage = data.message || "Action processed successfully.";
+                // Clean and format message
+                let messageHtml = rawMessage
+                    .trim()
+                    .replace(/\n\n+/g, '<br><br>')
+                    .replace(/\n/g, '<br>');
+                
+                let actionsHtml = "";
+
+                // Handle Confirmation Required (Master Prompt Confirmation System)
+                if (data.status === 'confirmation_required') {
+                    actionsHtml = `
+                        <div class="mt-2.5 pt-2 border-top d-flex gap-2 justify-content-start" style="border-color: #67DDE0 !important;">
+                            <button class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center text-white" style="font-size: 11.5px; background-color: #FF6B21; border: none;" onclick='sendGlobalChat(${JSON.stringify(data)})'>
+                                <i class="fa-solid fa-check me-1"></i> Confirm
+                            </button>
+                            <button class="btn btn-sm rounded-pill px-3 py-1" style="font-size: 11.5px; color: #07152D; background-color: #F4FAFA; border: 1px solid #67DDE0;" onclick="this.closest('.mt-2.5').remove()">
+                                Cancel
+                            </button>
+                        </div>
+                    `;
+                }
+
+                // Handle UI Action Trigger (Tab Switch or Navigate)
+                if (data.ui_action) {
+                    if (data.ui_action.type === 'SWITCH_TAB' && typeof switchTab === 'function') {
+                        switchTab(data.ui_action.target);
+                    } else if (data.ui_action.type === 'NAVIGATE') {
+                        actionsHtml += `
+                            <div class="mt-2.5 pt-2 border-top text-start" style="border-color: #67DDE0 !important;">
+                                <a href="${data.ui_action.route}" class="btn action-btn-teal btn-sm rounded-pill px-3 py-1 text-white text-decoration-none d-inline-flex align-items-center gap-1.5" style="font-size: 11.5px; font-weight: 600; background-color: #078A83;">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Record
+                                </a>
+                            </div>
+                        `;
+                    }
+                }
+
+                messagesDiv.innerHTML += `
+                    <div class="d-flex gap-2 align-items-start text-start mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 28px; height: 28px; background-color: #67DDE0; color: #07152D; flex-shrink: 0; font-size: 11px;">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="px-3 py-2.5 rounded-3 bg-white small shadow-sm text-start" style="max-width: 85%; line-height: 1.55; font-size: 12.5px; text-align: left !important; color: #07152D !important; word-break: break-word; border: 1px solid #67DDE0;">
+                            <div style="text-align: left !important; color: #07152D !important; white-space: normal;">${messageHtml}</div>
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            })
+            .catch(err => {
+                const typingNode = document.getElementById(typingId);
+                if (typingNode) typingNode.remove();
+                messagesDiv.innerHTML += `
+                    <div class="d-flex gap-2 align-items-start text-start mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 28px; height: 28px; background-color: #F4FAFA; color: #FF6B21; border: 1px solid #FF6B21; flex-shrink: 0; font-size: 11px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="px-3 py-2 rounded-3 small shadow-sm text-start" style="max-width: 85%; font-size: 12.5px; text-align: left !important; color: #FF6B21 !important; background-color: #F4FAFA; border: 1px solid #FF6B21; font-weight: 500;">
+                            The AI service is temporarily unavailable. Please try again shortly.
+                        </div>
+                    </div>
+                `;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+        }
+    </script>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <!-- Global Real-Time Notification Toast Alerts Container -->
+    <div id="global-notification-toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10050; display: flex; flex-direction: column; gap: 10px; max-width: 380px; width: 92vw; pointer-events: none;">
+    </div>
+
+    <script>
+        let seenNotificationIds = new Set();
+        let audioCtxNotification = null;
+
+        function playNotificationChime() {
+            try {
+                if (!audioCtxNotification) {
+                    audioCtxNotification = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtxNotification.state === 'suspended') {
+                    audioCtxNotification.resume();
+                }
+                const osc = audioCtxNotification.createOscillator();
+                const gain = audioCtxNotification.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtxNotification.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtxNotification.currentTime + 0.15); // A5
+                gain.gain.setValueAtTime(0.2, audioCtxNotification.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtxNotification.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtxNotification.destination);
+                osc.start();
+                osc.stop(audioCtxNotification.currentTime + 0.35);
+            } catch(e) {}
+        }
+
+        function showNotificationToast(notif) {
+            const container = document.getElementById('global-notification-toast-container');
+            if (!container) return;
+
+            const toastId = 'notif-toast-' + notif.id;
+            if (document.getElementById(toastId)) return;
+
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'p-3 rounded-4 shadow-lg border text-start';
+            toast.style.backgroundColor = '#FFFFFF';
+            toast.style.borderColor = '#67DDE0';
+            toast.style.color = '#07152D';
+            toast.style.pointerEvents = 'auto';
+            toast.style.animation = 'slideInRight 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+            toast.style.boxShadow = '0 12px 36px rgba(7, 138, 131, 0.2)';
+
+            let actionBtnHtml = '';
+            if (notif.action_url) {
+                const btnLabel = notif.title.toLowerCase().includes('patient') ? 'Open Workspace' : 'Join Consultation Room';
+                actionBtnHtml = `
+                    <div class="mt-2.5 pt-2 border-top d-flex gap-2" style="border-color: #67DDE0 !important;">
+                        <a href="${notif.action_url}" onclick="markNotifRead(${notif.id})" class="btn btn-sm text-white rounded-pill px-3 py-1 fw-bold text-decoration-none d-inline-flex align-items-center gap-1.5" style="background-color: #078A83; font-size: 11.5px;">
+                            <i class="fa-solid fa-headset"></i> ${btnLabel}
+                        </a>
+                        <button onclick="dismissNotifToast('${toastId}', ${notif.id})" class="btn btn-sm rounded-pill px-2.5 py-1 text-muted" style="font-size: 11px; background-color: #F4FAFA; border: 1px solid #67DDE0;">
+                            Dismiss
+                        </button>
+                    </div>
+                `;
+            }
+
+            toast.innerHTML = `
+                <div class="d-flex align-items-start justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width: 32px; height: 32px; background-color: #078A83;">
+                            <i class="fa-solid fa-bell fs-6"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-dark" style="font-size: 13px;">${escapeHtmlGlobal(notif.title)}</h6>
+                            <span class="text-muted" style="font-size: 9.5px;">Just now • MediScribe Live</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" style="font-size: 10px;" onclick="dismissNotifToast('${toastId}', ${notif.id})" aria-label="Close"></button>
+                </div>
+                <p class="small text-dark mb-1 mt-2" style="font-size: 12px; line-height: 1.45;">${escapeHtmlGlobal(notif.message)}</p>
+                ${actionBtnHtml}
+            `;
+
+            container.appendChild(toast);
+            playNotificationChime();
+        }
+
+        function dismissNotifToast(toastId, notifId) {
+            const el = document.getElementById(toastId);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(50px)';
+                el.style.transition = 'all 0.25s ease';
+                setTimeout(() => el.remove(), 250);
+            }
+            if (notifId) markNotifRead(notifId);
+        }
+
+        function markNotifRead(notifId) {
+            const formData = new FormData();
+            if (notifId) formData.append('notification_id', notifId);
+            formData.append('csrfmiddlewaretoken', getCsrfToken());
+
+            fetch('/consultations/notifications/mark-read/', {
+                method: 'POST',
+                body: formData
+            }).catch(e => {});
+        }
+
+        function escapeHtmlGlobal(str) {
+            return String(str || '').replace(/[&<>"'`=\/]/g, function (s) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '/': '&#x2F;', '`': '&#x60;', '=': '&#x3D;' }[s];
+            });
+        }
+
+        function pollGlobalNotifications() {
+            fetch('/consultations/notifications/unread/')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success' && data.notifications) {
+                    // Update badges if any
+                    document.querySelectorAll('.badge-notif-count, .notification-badge').forEach(badge => {
+                        badge.innerText = data.count;
+                        badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                    });
+
+                    data.notifications.forEach(notif => {
+                        if (!seenNotificationIds.has(notif.id)) {
+                            seenNotificationIds.add(notif.id);
+                            // If user is not currently inside the consultation room of this notification, show toast
+                            const currentPath = window.location.pathname;
+                            if (!notif.action_url || !currentPath.includes(notif.action_url.split('/')[2])) {
+                                showNotificationToast(notif);
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(e => {});
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            pollGlobalNotifications();
+            setInterval(pollGlobalNotifications, 3500);
+        });
+    </script>
+    <style>
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(60px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+    {% endif %}
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    
+    <!-- Marked.js Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- GSAP & AOS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <script>
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

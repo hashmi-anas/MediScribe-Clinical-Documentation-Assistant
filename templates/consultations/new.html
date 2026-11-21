@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Start New Consultation — MediScribe{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #F4FAFA !important;
+        color: #07152D;
+    }
+    .admin-card {
+        background-color: #FFFFFF;
+        border: 1px solid #67DDE0;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(7, 138, 131, 0.06);
+    }
+    .text-teal-highlight {
+        color: #078A83 !important;
+    }
+    .bg-teal-highlight {
+        background-color: #078A83 !important;
+    }
+    .action-btn-teal {
+        background-color: #078A83;
+        color: #FFFFFF !important;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .action-btn-teal:hover {
+        background-color: #06726c;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(7, 138, 131, 0.25);
+    }
+    .tab-btn {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 600;
+        border-bottom: 2px solid transparent;
+        color: #07152D;
+        opacity: 0.7;
+    }
+    .tab-btn.active {
+        color: #078A83;
+        opacity: 1;
+        border-bottom-color: #078A83;
+    }
+    .doctor-option-card {
+        border: 1px solid #67DDE0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #FFFFFF;
+    }
+    .doctor-option-card:hover {
+        border-color: #078A83;
+        background-color: #F4FAFA;
+    }
+    .doctor-option-card.selected {
+        border-color: #078A83;
+        background-color: #E6F4F2;
+        box-shadow: 0 2px 8px rgba(7, 138, 131, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Brand header -->
+            <div class="d-flex align-items-center mb-4 px-2 justify-content-center">
+                <div class="me-2 d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm" style="width: 46px; height: 46px; border: 1px solid #67DDE0;">
+                    <i class="fa-solid fa-heart-pulse logo-heart fs-4 text-teal-highlight"></i>
+                </div>
+                <div class="d-flex flex-column text-start">
+                    <span class="fw-bold fs-4 lh-1" style="color: #07152D;">Medi<span class="text-teal-highlight">Scribe</span></span>
+                    <span style="font-size: 10px; color: #078A83; font-weight: 600;">Generative AI Clinical Documentation</span>
+                </div>
+            </div>
+
+            <div class="admin-card p-4 p-md-5">
+                {% if is_patient %}
+                    <!-- PATIENT INITIATION FLOW -->
+                    <div class="text-center mb-4">
+                        <span class="badge bg-light text-teal-highlight border px-3 py-1 rounded-pill mb-2">Patient Portal</span>
+                        <h4 class="fw-bold mb-1 text-dark">Start Consultation with a Doctor</h4>
+                        <p class="small text-muted mb-0">Select your preferred physician to begin a live synchronized consultation.</p>
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="patient_start">
+
+                        <!-- Select Doctor -->
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-dark"><i class="fa-solid fa-user-doctor text-teal-highlight me-1"></i> Select Attending Physician</label>
+                            <select name="doctor_id" id="doctor_id" class="form-select form-select-lg bg-white text-dark" style="border: 1px solid #67DDE0; font-size: 14px;" required>
+                                {% for doc in doctors %}
+                                    <option value="{{ doc.id }}">
+                                        Dr. {{ doc.user.get_full_name|default:doc.user.username }} &mdash; {{ doc.specialization }} ({{ doc.hospital }})
+                                    </option>
+                                {% empty %}
+                                    <option value="">Dr. MediScribe Staff Physician &mdash; General Practice</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Language & Reason for Visit -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="language" class="form-label small fw-bold text-dark"><i class="fa-solid fa-language text-teal-highlight me-1"></i> Consultation Language</label>
+                                <select name="language" id="language" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;">
+                                    {% for lang in languages %}
+                                        <option value="{{ lang }}">{{ lang }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="specialty" class="form-label small fw-bold text-dark"><i class="fa-solid fa-notes-medical text-teal-highlight me-1"></i> Clinical Focus</label>
+                                <input type="text" name="specialty" id="specialty" class="form-control bg-white text-dark" style="border: 1px solid #67DDE0;" value="General Healthcare & Diagnostics">
+                            </div>
+                        </div>
+
+                        <!-- Chief Complaint / Reason -->
+                        <div class="mb-4">
+                            <label for="reason" class="form-label small fw-bold text-dark"><i class="fa-solid fa-circle-question text-teal-highlight me-1"></i> Chief Complaint / What brings you in today?</label>
+                            <textarea name="reason" id="reason" class="form-control bg-white text-dark" rows="3" style="border: 1px solid #67DDE0; font-size: 13.5px;" placeholder="Briefly describe your symptoms, concern, or medical question (e.g. fever, headache for 2 days, follow-up on medication)..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn action-btn-teal w-100 py-3 rounded-pill fw-bold fs-6">
+                            <i class="fa-solid fa-video me-2"></i> Launch Synchronized Consultation Room
+                        </button>
+                    </form>
+
+                {% else %}
+                    <!-- DOCTOR / ADMIN INITIATION FLOW -->
+                    <h4 class="fw-bold mb-2 text-center text-dark">Start New Consultation Workspace</h4>
+                    <p class="small text-center mb-4 text-muted">Initialize a secure generative session. Choose an existing profile or enroll a new patient profile.</p>
+
+                    <!-- Navigation Tabs -->
+                    <div class="d-flex mb-4 gap-4 justify-content-center" style="border-bottom: 1px solid #67DDE0;">
+                        <div id="btn-select-patient" class="tab-btn pb-2 active" onclick="switchForm('select')">
+                            <i class="fa-solid fa-user-check me-1.5"></i> Select Existing Patient
+                        </div>
+                        <div id="btn-create-patient" class="tab-btn pb-2" onclick="switchForm('create')">
+                            <i class="fa-solid fa-user-plus me-1.5"></i> Register & Enrol New Patient
+                        </div>
+                    </div>
+
+                    <!-- Form 1: Select Existing Patient -->
+                    <form id="form-select-patient" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="select_patient">
+
+                        <div class="mb-3">
+                            <label for="patient_id" class="form-label small fw-bold text-dark">Select Patient Profile</label>
+                            <select name="patient_id" id="patient_id" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;" required>
+                                <option value="" disabled selected>Choose patient profile...</option>
+                                {% for patient in patients %}
+                                    <option value="{{ patient.id }}">{{ patient.name }} (DOB: {{ patient.date_of_birth|date:"Y-m-d" }}, {{ patient.gender }} • Blood: {{ patient.blood_group }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label small fw-bold text-dark">Department</label>
+                                <select name="department" id="department" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;">
+                                    {% for dept in departments %}
+                                        <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="visit_type" class="form-label small fw-bold text-dark">Visit Type</label>
+                                <select name="visit_type" id="visit_type" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;">
+                                    <option value="Outpatient Consultation">Outpatient Consultation</option>
+                                    <option value="Inpatient Rounding">Inpatient Rounding</option>
+                                    <option value="Telehealth Call">Telehealth Call</option>
+                                    <option value="Emergency Care">Emergency Care</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="language" class="form-label small fw-bold text-dark">Consultation Language</label>
+                                <select name="language" id="language" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;">
+                                    {% for lang in languages %}
+                                        <option value="{{ lang }}">{{ lang }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="specialty" class="form-label small fw-bold text-dark">Clinical Specialty</label>
+                                <input type="text" name="specialty" id="specialty" class="form-control bg-white text-dark" style="border: 1px solid #67DDE0;" placeholder="General Practice" value="General Medicine">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn action-btn-teal w-100 py-2.5 rounded-pill fw-bold">
+                            <i class="fa-solid fa-microphone me-2"></i> Launch Workspace & Start Session
+                        </button>
+                    </form>
+
+                    <!-- Form 2: Register & Enrol New Patient -->
+                    <form id="form-create-patient" method="POST" class="d-none">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create_patient">
+
+                        <h6 class="fw-bold pb-2 mb-3 text-dark" style="border-bottom: 1px solid #67DDE0;">1. Patient Profile Details</h6>
+                        
+                        <div class="mb-3">
+                            <label for="new_name" class="form-label small fw-bold text-dark">Full Name</label>
+                            <input type="text" name="name" id="new_name" class="form-control bg-white text-dark" style="border: 1px solid #67DDE0;" placeholder="Jane Smith" required disabled>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="new_gender" class="form-label small fw-bold text-dark">Gender</label>
+                                <select name="gender" id="new_gender" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;" required disabled>
+                                    <option value="Male">Male</option>
+                                    <option value="Female" selected>Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="new_dob" class="form-label small fw-bold text-dark">Date of Birth</label>
+                                <input type="date" name="date_of_birth" id="new_dob" class="form-control bg-white text-dark" style="border: 1px solid #67DDE0;" required disabled>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="new_blood" class="form-label small fw-bold text-dark">Blood Group</label>
+                                <select name="blood_group" id="new_blood" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;" disabled>
+                                    <option value="A+">A+</option>
+                                    <option value="O+" selected>O+</option>
+                                    <option value="B+">B+</option>
+                                    <option value="AB+">AB+</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_allergies" class="form-label small fw-bold text-dark">Known Allergies</label>
+                            <input type="text" name="allergies" id="new_allergies" class="form-control bg-white text-dark" style="border: 1px solid #67DDE0;" placeholder="Penicillin, Peanuts..." disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_chronic" class="form-label small fw-bold text-dark">Chronic Conditions</label>
+                            <input type="text" name="chronic_conditions" id="new_chronic" class="form-control bg-white text-dark" style="border: 1px solid #67DDE0;" placeholder="Hypertension, Diabetes..." disabled>
+                        </div>
+
+                        <h6 class="fw-bold pb-2 mb-3 mt-4 text-dark" style="border-bottom: 1px solid #67DDE0;">2. Session Parameters</h6>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="new_dept" class="form-label small fw-bold text-dark">Department</label>
+                                <select name="department" id="new_dept" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;" disabled>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="new_visit" class="form-label small fw-bold text-dark">Visit Type</label>
+                                <select name="visit_type" id="new_visit" class="form-select bg-white text-dark" style="border: 1px solid #67DDE0;" disabled>
+                                    <option value="Outpatient Consultation">Outpatient Consultation</option>
+                                    <option value="Inpatient Rounding">Inpatient Rounding</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn action-btn-teal w-100 py-2.5 rounded-pill fw-bold">
+                            <i class="fa-solid fa-microphone me-2"></i> Register, Enrol & Start Session
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchForm(mode) {
+        if (mode === 'select') {
+            document.getElementById('btn-select-patient').classList.add('active');
+            document.getElementById('btn-create-patient').classList.remove('active');
+            document.getElementById('form-select-patient').classList.remove('d-none');
+            document.getElementById('form-create-patient').classList.add('d-none');
+            
+            document.querySelectorAll('#form-select-patient [name]').forEach(el => el.removeAttribute('disabled'));
+            document.querySelectorAll('#form-create-patient [name]').forEach(el => el.setAttribute('disabled', 'true'));
+        } else {
+            document.getElementById('btn-select-patient').classList.remove('active');
+            document.getElementById('btn-create-patient').classList.add('active');
+            document.getElementById('form-select-patient').classList.add('d-none');
+            document.getElementById('form-create-patient').classList.remove('d-none');
+            
+            document.querySelectorAll('#form-select-patient [name]').forEach(el => el.setAttribute('disabled', 'true'));
+            document.querySelectorAll('#form-create-patient [name]').forEach(el => el.removeAttribute('disabled'));
+        }
+    }
+</script>
+{% endblock %}
